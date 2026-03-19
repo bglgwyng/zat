@@ -229,11 +229,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1773932222,
-        "narHash": "sha256-WPQsi4gzx5kEQeGFxB5EwcAcRNjv7lHl6jSk2lGXe24=",
+        "lastModified": 1773935145,
+        "narHash": "sha256-42HGZjWLaTXRlYcOEyFG1IF0HsbIIoEjvj53AFZaN3s=",
         "owner": "bglgwyng",
         "repo": "zat-js-viewer",
-        "rev": "0af278c0d3f12880a5516ad7c464d52a1631b0d4",
+        "rev": "d96cedaa2b1e90a72f8c2fbd0e5ffd4a4c250bf9",
         "type": "github"
       },
       "original": {
