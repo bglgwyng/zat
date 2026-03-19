@@ -2,15 +2,7 @@
 
 {
   defaultFallback = pkgs.writeShellScriptBin "zat-fallback" ''
-    file="$1"
-    total=$(wc -l < "$file")
-    limit=20
-    if [ "$total" -le "$limit" ]; then
-      cat -n "$file"
-    else
-      head -n "$limit" "$file" | cat -n
-      echo "... ($total lines total)"
-    fi
+    cat -n "$1"
   '';
 
   mkZat =
