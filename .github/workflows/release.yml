@@ -30,7 +30,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lat-${{ matrix.system }}
+          name: zat-${{ matrix.system }}
           path: result
 
   release:
@@ -49,9 +49,9 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release
-          for dir in artifacts/lat-*/; do
-            system=$(basename "$dir" | sed 's/lat-//')
-            cp "$dir"/* "release/lat-${system}.tar.gz"
+          for dir in artifacts/zat-*/; do
+            system=$(basename "$dir" | sed 's/zat-//')
+            cp "$dir"/* "release/zat-${system}.tar.gz"
           done
 
       - name: Create Release
@@ -76,51 +76,51 @@ jobs:
         run: |
           mkdir -p assets
 
-          curl -L -o assets/lat-aarch64-darwin.tar.gz \
-            "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/lat-aarch64-darwin.tar.gz"
-          curl -L -o assets/lat-x86_64-darwin.tar.gz \
-            "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/lat-x86_64-darwin.tar.gz"
-          curl -L -o assets/lat-x86_64-linux.tar.gz \
-            "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/lat-x86_64-linux.tar.gz"
+          curl -L -o assets/zat-aarch64-darwin.tar.gz \
+            "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/zat-aarch64-darwin.tar.gz"
+          curl -L -o assets/zat-x86_64-darwin.tar.gz \
+            "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/zat-x86_64-darwin.tar.gz"
+          curl -L -o assets/zat-x86_64-linux.tar.gz \
+            "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/zat-x86_64-linux.tar.gz"
 
-          echo "sha256_aarch64_darwin=$(sha256sum assets/lat-aarch64-darwin.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          echo "sha256_x86_64_darwin=$(sha256sum assets/lat-x86_64-darwin.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          echo "sha256_x86_64_linux=$(sha256sum assets/lat-x86_64-linux.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "sha256_aarch64_darwin=$(sha256sum assets/zat-aarch64-darwin.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "sha256_x86_64_darwin=$(sha256sum assets/zat-x86_64-darwin.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "sha256_x86_64_linux=$(sha256sum assets/zat-x86_64-linux.tar.gz | cut -d' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Generate Homebrew formula
         run: |
           mkdir -p Formula
-          cat > Formula/lat.rb << EOF
-          class Lat < Formula
-            desc "cat for LLMs - display file contents in an LLM-friendly way"
+          cat > Formula/zat.rb << EOF
+          class Zat < Formula
+            desc "zatto files and directories"
             homepage "https://github.com/${{ github.repository }}"
             version "${{ steps.version.outputs.version }}"
             license "MIT"
 
             on_macos do
               on_arm do
-                url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/lat-aarch64-darwin.tar.gz"
+                url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/zat-aarch64-darwin.tar.gz"
                 sha256 "${{ steps.sha.outputs.sha256_aarch64_darwin }}"
               end
               on_intel do
-                url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/lat-x86_64-darwin.tar.gz"
+                url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/zat-x86_64-darwin.tar.gz"
                 sha256 "${{ steps.sha.outputs.sha256_x86_64_darwin }}"
               end
             end
 
             on_linux do
               on_intel do
-                url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/lat-x86_64-linux.tar.gz"
+                url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/zat-x86_64-linux.tar.gz"
                 sha256 "${{ steps.sha.outputs.sha256_x86_64_linux }}"
               end
             end
 
             def install
-              bin.install "lat"
+              bin.install "zat"
             end
 
             test do
-              system "#{bin}/lat", "--help"
+              system "#{bin}/zat", "--help"
             end
           end
           EOF
@@ -135,7 +135,7 @@ jobs:
           destination-repository-name: homebrew-tap
           target-branch: main
           target-directory: Formula
-          commit-message: "lat ${{ steps.version.outputs.version }}"
+          commit-message: "zat ${{ steps.version.outputs.version }}"
           user-email: github-actions[bot]@users.noreply.github.com
           user-name: github-actions[bot]
           create-target-branch-if-needed: true
