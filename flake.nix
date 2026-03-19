@@ -1,10 +1,10 @@
 {
-  description = "cat for LLMs";
+  description = "zat: cat for LLMs";
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    lat-js-viewer.url = "github:bglgwyng/lat-js-viewer";
+    zat-js-viewer.url = "github:bglgwyng/zat-js-viewer";
   };
 
   outputs =
@@ -27,7 +27,7 @@
           ...
         }:
         let
-          defaultFallback = pkgs.writeShellScriptBin "lat-fallback" ''
+          defaultFallback = pkgs.writeShellScriptBin "zat-fallback" ''
             file="$1"
             total=$(wc -l < "$file")
             limit=20
@@ -58,7 +58,7 @@
                     "*.cjs"
                     "*.mjs"
                   ];
-                  handler = inputs'.lat-js-viewer.packages.default;
+                  handler = inputs'.zat-js-viewer.packages.default;
                 }
               ],
               fallback ? defaultFallback,
@@ -71,7 +71,7 @@
               '';
               cases = builtins.concatStringsSep "\n" (map mkCase rules);
             in
-            (pkgs.writeShellScriptBin "lat" ''
+            (pkgs.writeShellScriptBin "zat" ''
               file="$1"
               shift
               case "$file" in
@@ -82,11 +82,11 @@
               esac
             '').overrideAttrs
               {
-                pname = "lat";
+                pname = "zat";
                 version = "0.1.0";
               }
           ) { };
-          packages.tarball = pkgs.runCommand "lat-${system}.tar.gz" { } ''
+          packages.tarball = pkgs.runCommand "zat-${system}.tar.gz" { } ''
             tar -czvf $out -C ${self'.packages.default}/bin .
           '';
           formatter = pkgs.nixfmt-rfc-style;

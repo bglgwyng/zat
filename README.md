@@ -1,25 +1,25 @@
-# lat
+# zat
 
-`lat` is `cat` for LLMs. It outputs files in a format that LLMs can easily understand.
+`zat` is `cat` for LLMs. It outputs files in a format that LLMs can easily understand.
 
 ## Installation
 
 ### Homebrew
 
 ```shell
-brew install bglgwyng/tap/lat
+brew install bglgwyng/tap/zat
 ```
 
 ### Nix
 
 ```shell
-nix profile install github:bglgwyng/lat
+nix profile install github:bglgwyng/zat
 ```
 
 Or run directly without installing:
 
 ```shell
-nix run github:bglgwyng/lat -- <FILE>
+nix run github:bglgwyng/zat -- <FILE>
 ```
 
 ## Key Features
@@ -31,10 +31,10 @@ nix run github:bglgwyng/lat -- <FILE>
 
 ## Basic Usage
 
-When reading large files, `lat` outputs up to a certain number of characters and summarizes the rest. Omitted sections are marked with anchors in the format `{: path :}`.
+When reading large files, `zat` outputs up to a certain number of characters and summarizes the rest. Omitted sections are marked with anchors in the format `{: path :}`.
 
 ```shell
-lat big.json
+zat big.json
 ```
 
 ```json
@@ -52,7 +52,7 @@ Use the `-f` option to follow an anchor.
 ### Path focus
 
 ```shell
-lat -f data_1.big_array big.json
+zat -f data_1.big_array big.json
 ```
 
 ```json
@@ -66,7 +66,7 @@ The focused content may contain additional anchors.
 The `#more:N` anchor represents content after line N.
 
 ```shell
-lat -f '#more:5' big.json
+zat -f '#more:5' big.json
 ```
 
 ```json
@@ -81,7 +81,7 @@ lat -f '#more:5' big.json
 Use commas to focus on multiple paths at once.
 
 ```shell
-lat -f data_1.array,data_2.array big.json
+zat -f data_1.array,data_2.array big.json
 ```
 
 ## Character Limit (-c)
@@ -89,7 +89,7 @@ lat -f data_1.array,data_2.array big.json
 Use `-c` to specify the number of characters to output. The default is 1000.
 
 ```shell
-lat -c 100 big.json
+zat -c 100 big.json
 ```
 
 This is not a strict limit; actual output may be slightly longer.
@@ -99,5 +99,5 @@ This is not a strict limit; actual output may be slightly longer.
 Add this to your CLAUDE.md or AGENTS.md:
 
 ```
-When reading files, use `lat <file>` instead of `cat`. Output is limited to 1000 characters by default (use `-c` to change). Omitted content is marked with anchors like `{: path :}`. To view omitted sections, run `lat -f <anchor> <file>`.
+When reading files, use `zat <file>` instead of `cat`. Output is limited to 1000 characters by default (use `-c` to change). Omitted content is marked with anchors like `{: path :}`. To view omitted sections, run `zat -f <anchor> <file>`.
 ```

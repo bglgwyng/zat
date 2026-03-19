@@ -2,13 +2,13 @@
 
 We currently have the following viewers implemented:
 
-- **JSON**: [lat-json-viewer](https://github.com/bglgwyng/lat-json-viewer)
-- **JS/TS**: [lat-js-viewer](https://github.com/bglgwyng/lat-js-viewer)
-- **Plaintext (fallback)**: [lat-plaintext-viewer](https://github.com/bglgwyng/lat-plaintext-viewer)
+- **JSON**: [zat-json-viewer](https://github.com/bglgwyng/zat-json-viewer)
+- **JS/TS**: [zat-js-viewer](https://github.com/bglgwyng/zat-js-viewer)
+- **Plaintext (fallback)**: [zat-plaintext-viewer](https://github.com/bglgwyng/zat-plaintext-viewer)
 
 ## Adding Support for New File Types
 
-To extend `lat` to support more file extensions, you can create your own viewer. We welcome pull requests for both new viewers and improvements to existing ones!
+To extend `zat` to support more file extensions, you can create your own viewer. We welcome pull requests for both new viewers and improvements to existing ones!
 
 ## Distribution Notes
 
