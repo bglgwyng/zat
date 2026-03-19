@@ -23,10 +23,14 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ ];
 
-      flake = {
-        nixosModules.default = ./module.nix;
-        darwinModules.default = ./module.nix;
-      };
+      flake =
+        let
+          systemModule = import ./system-module.nix { inherit inputs; };
+        in
+        {
+          nixosModules.default = systemModule;
+          darwinModules.default = systemModule;
+        };
 
       systems = [
         "x86_64-linux"
@@ -44,7 +48,17 @@
           ...
         }:
         let
-          zatLib = import ./lib.nix { inherit pkgs; };
+          evalZat = pkgs.lib.evalModules {
+            modules = [
+              (import ./module.nix { inherit inputs; })
+              {
+                config = {
+                  _module.args = { inherit pkgs; };
+                  programs.zat.enable = true;
+                };
+              }
+            ];
+          };
         in
         {
           _module.args.pkgs = import inputs.nixpkgs {
@@ -53,43 +67,7 @@
               allowBroken = true;
             };
           };
-          packages.default = zatLib.mkZat {
-            rules = [
-              {
-                patterns = [
-                  "*.js"
-                  "*.ts"
-                  "*.jsx"
-                  "*.tsx"
-                  "*.cjs"
-                  "*.mjs"
-                ];
-                handler = inputs'.zat-js-viewer.packages.default;
-              }
-              {
-                patterns = [ "*.rs" ];
-                handler = inputs'.zat-rust-viewer.packages.default;
-              }
-              {
-                patterns = [ "*.py" ];
-                handler = inputs'.zat-python-viewer.packages.default;
-              }
-            ];
-            fallback = zatLib.defaultFallback;
-            directoryIndex = [
-              "index.md"
-              "README.md"
-              "index.ts"
-              "index.js"
-              "index.tsx"
-              "index.jsx"
-              "mod.rs"
-              "lib.rs"
-              "main.rs"
-              "__init__.py"
-              "."
-            ];
-          };
+          packages.default = evalZat.config.programs.zat.package;
           packages.tarball = pkgs.runCommand "zat-${system}.tar.gz" { } ''
             tar -czvf $out -C ${self'.packages.default}/bin .
           '';

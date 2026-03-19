@@ -1,8 +1,37 @@
+{ inputs }:
 { pkgs, lib, config, ... }:
 
 let
   cfg = config.programs.zat;
   zatLib = import ./lib.nix { inherit pkgs; };
+
+  viewers = {
+    zat-js-viewer = inputs.zat-js-viewer.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    zat-rust-viewer = inputs.zat-rust-viewer.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    zat-python-viewer = inputs.zat-python-viewer.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  };
+
+  defaultRules = [
+    {
+      patterns = [
+        "*.js"
+        "*.ts"
+        "*.jsx"
+        "*.tsx"
+        "*.cjs"
+        "*.mjs"
+      ];
+      handler = viewers.zat-js-viewer;
+    }
+    {
+      patterns = [ "*.rs" ];
+      handler = viewers.zat-rust-viewer;
+    }
+    {
+      patterns = [ "*.py" ];
+      handler = viewers.zat-python-viewer;
+    }
+  ];
 
   ruleType = lib.types.submodule {
     options = {
@@ -23,14 +52,14 @@ in
 
     rules = lib.mkOption {
       type = lib.types.listOf ruleType;
-      default = [ ];
+      default = defaultRules;
       description = "List of file pattern rules mapping to viewer handlers.";
     };
 
     fallback = lib.mkOption {
       type = lib.types.package;
       default = zatLib.defaultFallback;
-      defaultText = lib.literalExpression "built-in head -n 20 fallback";
+      defaultText = lib.literalExpression "built-in cat -n fallback";
       description = "Fallback viewer for unmatched file types.";
     };
 
@@ -63,7 +92,5 @@ in
     programs.zat.package = zatLib.mkZat {
       inherit (cfg) rules fallback directoryIndex;
     };
-
-    environment.systemPackages = [ cfg.package ];
   };
 }
