@@ -1,5 +1,5 @@
 {
-  description = "zat: cat for LLMs";
+  description = "zatto files and directories";
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -50,12 +50,13 @@
         }:
         let
           zatSubmodule = import ./submodule.nix { inherit inputs; } { inherit pkgs lib; };
-          evalZat = (lib.evalModules {
-            modules = [
-              zatSubmodule
-              { enable = true; }
-            ];
-          }).config;
+          evalZat =
+            (lib.evalModules {
+              modules = [
+                zatSubmodule
+                { enable = true; }
+              ];
+            }).config;
         in
         {
           _module.args.pkgs = import inputs.nixpkgs {
