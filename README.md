@@ -108,10 +108,15 @@ Add this to your `CLAUDE.md` or `AGENTS.md`:
 ### zat
 
 A code outline viewer that shows exported symbol signatures with line numbers.
-Use it to understand file structure before reading the full content.
+
+**Prefer `zat` over other tools for initial exploration:**
+- **Over `cat` or `Read`** — when you need interfaces/signatures, not full implementation
+- **Over `ls`** — when exploring a directory, to get richer context (entry file outlines + listing)
+
+Use `zat` first to get an outline, then `Read(offset, limit)` to read only the relevant sections.
 
 - `zat <file>` — Show outline (JS/TS, Rust, Python supported; falls back to `cat -n` for other types)
 - `zat <dir>` — Show entry file outlines (index.ts, lib.rs, etc.) and directory listing
 - Use the line numbers (e.g. `L10-L25`) to `Read(offset, limit)` into specific ranges
-- Pipe through `head` to limit output: `zat <file> | head -n 30`
+- Pipe through `head` to limit output: `zat <file> | head -n 50`
 ````
