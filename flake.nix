@@ -72,6 +72,16 @@
                 }
               ],
               fallback ? defaultFallback,
+              directoryIndex ? [
+                "index.ts"
+                "index.js"
+                "index.tsx"
+                "index.jsx"
+                "mod.rs"
+                "lib.rs"
+                "main.rs"
+                "__init__.py"
+              ],
             }:
             let
               mkCase = rule: ''
@@ -84,6 +94,25 @@
             (pkgs.writeShellScriptBin "zat" ''
               file="$1"
               shift
+
+              # Directory support
+              if [ -d "$file" ]; then
+                entry_files=(${builtins.concatStringsSep " " (map (e: ''"${e}"'') directoryIndex)})
+                found=0
+                for entry in "''${entry_files[@]}"; do
+                  target="$file/$entry"
+                  if [ -f "$target" ]; then
+                    echo "$entry:"
+                    "$0" "$target" "$@" | ${pkgs.gnused}/bin/sed 's/^/  /'
+                    found=1
+                  fi
+                done
+                if [ "$found" -eq 0 ]; then
+                  ${pkgs.coreutils}/bin/ls -1 "$file"
+                fi
+                exit 0
+              fi
+
               case "$file" in
                 ${cases}
                 *)
