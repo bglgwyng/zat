@@ -1,15 +1,27 @@
 # Contributing
 
-We currently have the following viewers implemented:
+## Current Viewers
 
-- **JSON**: [zat-json-viewer](https://github.com/bglgwyng/zat-json-viewer)
-- **JS/TS**: [zat-js-viewer](https://github.com/bglgwyng/zat-js-viewer)
-- **Plaintext (fallback)**: [zat-plaintext-viewer](https://github.com/bglgwyng/zat-plaintext-viewer)
+- **JS/TS**: [zat-js-viewer](https://github.com/bglgwyng/zat-js-viewer) — oxc parser
+- **Rust**: [zat-rust-viewer](https://github.com/bglgwyng/zat-rust-viewer) — syn parser
+- **Python**: [zat-python-viewer](https://github.com/bglgwyng/zat-python-viewer) — regex-based
 
-## Adding Support for New File Types
+## Adding a New Viewer
 
-To extend `zat` to support more file extensions, you can create your own viewer. We welcome pull requests for both new viewers and improvements to existing ones!
+1. Create a Rust CLI that takes a file path and outputs outline entries with line numbers
+2. Output format: `signature // L{start}-L{end}` (one per line, multi-line for classes/traits)
+3. Filter imports to only show those referenced in signatures
+4. Add a `flake.nix` for Nix builds (see existing viewers for reference)
+5. Add the viewer to `zat/flake.nix` as an input with file extension patterns
 
-## Distribution Notes
+## Nix Customization
 
-For the Nix distribution, users will be able to add custom file extension support and replace existing viewers with their own implementations. Non-Nix distributions will ship with a fixed set of standard viewers and won't be configurable.
+Users can override the default configuration:
+
+```nix
+zat.packages.default.override {
+  rules = [ ... ];          # File extension → viewer mapping
+  fallback = ...;           # Handler for unknown file types
+  directoryIndex = [ ... ]; # Entry files to look for in directories
+}
+```

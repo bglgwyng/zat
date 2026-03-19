@@ -1,14 +1,8 @@
 # zat
 
-`zat` is `cat` for LLMs. It outputs files in a format that LLMs can easily understand.
+`zat` (ざっと) is an outline viewer for LLMs. It shows file signatures and line numbers so LLMs can decide what to read in detail.
 
 ## Installation
-
-### Homebrew
-
-```shell
-brew install bglgwyng/tap/zat
-```
 
 ### Nix
 
@@ -16,88 +10,69 @@ brew install bglgwyng/tap/zat
 nix profile install github:bglgwyng/zat
 ```
 
-Or run directly without installing:
+Or run directly:
 
 ```shell
 nix run github:bglgwyng/zat -- <FILE>
 ```
 
-## Key Features
+## Usage
 
-- File content formatting
-- Summary at the beginning
-- Folding deeply nested sections
-- Character limit with anchors for omitted content
-
-## Basic Usage
-
-When reading large files, `zat` outputs up to a certain number of characters and summarizes the rest. Omitted sections are marked with anchors in the format `{: path :}`.
+### File outline
 
 ```shell
-zat big.json
+zat src/lib.rs
 ```
 
-```json
-{
-  "data_1": {
-    "a_big_array": {: data_1.big_array :}
-  }
-{: #more:4 :}
+```
+pub struct OutlineEntry // L8-L12
+pub struct ImportEntry // L14-L18
+pub fn extract_outline(source: &str) -> OutlineResult // L25-L166
 ```
 
-## Focus (-f)
+Only public/exported symbols are shown. Imports referenced in signatures are included.
 
-Use the `-f` option to follow an anchor.
-
-### Path focus
+### Directory outline
 
 ```shell
-zat -f data_1.big_array big.json
+zat src/
 ```
 
-```json
-[1, 2, 4, 5, ..]
+```
+lib.rs:
+  pub struct Config // L5-L10
+  pub fn load(path: &str) -> Config // L12-L30
+main.rs:
 ```
 
-The focused content may contain additional anchors.
+Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows their outlines. Falls back to file listing if no entry files found.
 
-### Line number focus
+## Supported Languages
 
-The `#more:N` anchor represents content after line N.
+| Language | Viewer | Parser |
+|----------|--------|--------|
+| JS/TS/JSX/TSX | [zat-js-viewer](https://github.com/bglgwyng/zat-js-viewer) | oxc |
+| Rust | [zat-rust-viewer](https://github.com/bglgwyng/zat-rust-viewer) | syn |
+| Python | [zat-python-viewer](https://github.com/bglgwyng/zat-python-viewer) | regex |
+| Other | built-in fallback | head -n 20 |
 
-```shell
-zat -f '#more:5' big.json
+## Nix Customization
+
+Viewers, entry files, and fallback are all configurable via Nix override:
+
+```nix
+(zat.packages.default.override {
+  directoryIndex = [ "index.ts" "mod.rs" "__init__.py" ];
+  # Add or replace rules/fallback as needed
+})
 ```
-
-```json
-  "data_2": {
-    "a_big_array": {: data_2.big_array :}
-  }
-{: #more:7 :}
-```
-
-### Multiple paths
-
-Use commas to focus on multiple paths at once.
-
-```shell
-zat -f data_1.array,data_2.array big.json
-```
-
-## Character Limit (-c)
-
-Use `-c` to specify the number of characters to output. The default is 1000.
-
-```shell
-zat -c 100 big.json
-```
-
-This is not a strict limit; actual output may be slightly longer.
 
 ## For AI Agents
 
-Add this to your CLAUDE.md or AGENTS.md:
+Add this to your `CLAUDE.md` or `AGENTS.md`:
 
 ```
-When reading files, use `zat <file>` instead of `cat`. Output is limited to 1000 characters by default (use `-c` to change). Omitted content is marked with anchors like `{: path :}`. To view omitted sections, run `zat -f <anchor> <file>`.
+Use `zat <file>` to see file outlines (exported symbols + line numbers).
+Use `zat <dir>` to see directory outlines.
+Then use Read with offset/limit to read specific line ranges.
 ```
