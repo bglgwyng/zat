@@ -4,10 +4,6 @@
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     lat-js-viewer.url = "github:bglgwyng/lat-js-viewer";
   };
 
@@ -46,9 +42,6 @@
         {
           _module.args.pkgs = import inputs.nixpkgs {
             inherit system;
-            overlays = [
-              (import inputs.rust-overlay)
-            ];
             config = {
               allowBroken = true;
             };
