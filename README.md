@@ -57,10 +57,12 @@ Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows thei
 |----------|--------|--------|
 | JS/TS/JSX/TSX | [zat-js-viewer](https://github.com/bglgwyng/zat-js-viewer) | oxc |
 | Rust | [zat-rust-viewer](https://github.com/bglgwyng/zat-rust-viewer) | syn |
-| Python | [zat-python-viewer](https://github.com/bglgwyng/zat-python-viewer) | regex |
-| Other | built-in fallback | head -n 20 |
+| Python | [zat-python-viewer](https://github.com/bglgwyng/zat-python-viewer) | rustpython-parser |
+| Other | built-in fallback | cat -n |
 
 ## Nix Customization
+
+### Override
 
 Viewers, entry files, and fallback are all configurable via Nix override:
 
@@ -71,12 +73,45 @@ Viewers, entry files, and fallback are all configurable via Nix override:
 })
 ```
 
+### NixOS Module
+
+```nix
+# flake.nix inputs
+inputs.zat.url = "github:bglgwyng/zat";
+
+# configuration.nix
+{ inputs, ... }:
+{
+  imports = [ inputs.zat.nixosModules.default ];
+
+  programs.zat = {
+    enable = true;
+    rules = [
+      {
+        patterns = [ "*.js" "*.ts" "*.tsx" ];
+        handler = inputs.zat-js-viewer.packages.${system}.default;
+      }
+    ];
+    # "." in directoryIndex controls where `ls` appears in output
+    directoryIndex = [ "index.ts" "lib.rs" "." ];
+  };
+}
+```
+
 ## For AI Agents
 
 Add this to your `CLAUDE.md` or `AGENTS.md`:
 
-```
-Use `zat <file>` to see file outlines (exported symbols + line numbers).
-Use `zat <dir>` to see directory outlines.
-Then use Read with offset/limit to read specific line ranges.
-```
+````markdown
+## Tools
+
+### zat
+
+A code outline viewer that shows exported symbol signatures with line numbers.
+Use it to understand file structure before reading the full content.
+
+- `zat <file>` — Show outline (JS/TS, Rust, Python supported; falls back to `cat -n` for other types)
+- `zat <dir>` — Show entry file outlines (index.ts, lib.rs, etc.) and directory listing
+- Use the line numbers (e.g. `L10-L25`) to `Read(offset, limit)` into specific ranges
+- Pipe through `head` to limit output: `zat <file> | head -n 30`
+````
