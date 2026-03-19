@@ -97,19 +97,17 @@
 
               # Directory support
               if [ -d "$file" ]; then
+                ${pkgs.coreutils}/bin/ls -1 "$file"
+
                 entry_files=(${builtins.concatStringsSep " " (map (e: ''"${e}"'') directoryIndex)})
-                found=0
                 for entry in "''${entry_files[@]}"; do
                   target="$file/$entry"
                   if [ -f "$target" ]; then
+                    echo ""
                     echo "$entry:"
                     "$0" "$target" "$@" | ${pkgs.gnused}/bin/sed 's/^/  /'
-                    found=1
                   fi
                 done
-                if [ "$found" -eq 0 ]; then
-                  ${pkgs.coreutils}/bin/ls -1 "$file"
-                fi
                 exit 0
               fi
 
