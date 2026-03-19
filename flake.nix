@@ -4,9 +4,18 @@
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    zat-js-viewer.url = "github:bglgwyng/zat-js-viewer";
-    zat-rust-viewer.url = "github:bglgwyng/zat-rust-viewer";
-    zat-python-viewer.url = "github:bglgwyng/zat-python-viewer";
+    zat-js-viewer = {
+      url = "github:bglgwyng/zat-js-viewer";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    zat-rust-viewer = {
+      url = "github:bglgwyng/zat-rust-viewer";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    zat-python-viewer = {
+      url = "github:bglgwyng/zat-python-viewer";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
