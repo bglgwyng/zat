@@ -8,9 +8,7 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    lat-json-viewer.url = "github:bglgwyng/lat-json-viewer";
     lat-js-viewer.url = "github:bglgwyng/lat-js-viewer";
-    lat-plaintext-viewer.url = "github:bglgwyng/lat-plaintext-viewer";
   };
 
   outputs =
@@ -32,6 +30,19 @@
           system,
           ...
         }:
+        let
+          defaultFallback = pkgs.writeShellScriptBin "lat-fallback" ''
+            file="$1"
+            total=$(wc -l < "$file")
+            limit=20
+            if [ "$total" -le "$limit" ]; then
+              cat -n "$file"
+            else
+              head -n "$limit" "$file" | cat -n
+              echo "... ($total lines total)"
+            fi
+          '';
+        in
         {
           _module.args.pkgs = import inputs.nixpkgs {
             inherit system;
@@ -46,10 +57,6 @@
             {
               rules ? [
                 {
-                  patterns = [ "*.json" ];
-                  handler = inputs'.lat-json-viewer.packages.default;
-                }
-                {
                   patterns = [
                     "*.js"
                     "*.ts"
@@ -61,7 +68,7 @@
                   handler = inputs'.lat-js-viewer.packages.default;
                 }
               ],
-              fallback ? inputs'.lat-plaintext-viewer.packages.default,
+              fallback ? defaultFallback,
             }:
             let
               mkCase = rule: ''
