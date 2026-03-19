@@ -5,6 +5,8 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     zat-js-viewer.url = "github:bglgwyng/zat-js-viewer";
+    zat-rust-viewer.url = "github:bglgwyng/zat-rust-viewer";
+    zat-python-viewer.url = "github:bglgwyng/zat-python-viewer";
   };
 
   outputs =
@@ -59,6 +61,14 @@
                     "*.mjs"
                   ];
                   handler = inputs'.zat-js-viewer.packages.default;
+                }
+                {
+                  patterns = [ "*.rs" ];
+                  handler = inputs'.zat-rust-viewer.packages.default;
+                }
+                {
+                  patterns = [ "*.py" ];
+                  handler = inputs'.zat-python-viewer.packages.default;
                 }
               ],
               fallback ? defaultFallback,
