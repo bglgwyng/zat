@@ -2,7 +2,7 @@
 
 {
   defaultFallback = pkgs.writeShellScriptBin "zat-fallback" ''
-    cat -n "$1"
+    cat -n
   '';
 
   mkZat =
@@ -10,14 +10,13 @@
     let
       mkCase = rule: ''
         ${builtins.concatStringsSep "|" rule.patterns})
-          exec ${rule.handler}/bin/* "$file" "$@"
+          exec ${rule.handler} < "$file"
           ;;
       '';
       cases = builtins.concatStringsSep "\n" (map mkCase rules);
     in
     (pkgs.writeShellScriptBin "zat" ''
       file="$1"
-      shift
 
       # Directory support
       if [ -d "$file" ]; then
@@ -33,7 +32,7 @@
             if [ -f "$target" ]; then
               [ "$printed" -eq 1 ] && echo ""
               echo "$entry:"
-              "$0" "$target" "$@" | ${pkgs.gnused}/bin/sed 's/^/  /'
+              "$0" "$target" | ${pkgs.gnused}/bin/sed 's/^/  /'
               printed=1
             fi
           fi
@@ -44,7 +43,7 @@
       case "$file" in
         ${cases}
         *)
-          exec ${fallback}/bin/* "$file" "$@"
+          exec ${fallback}/bin/* < "$file"
           ;;
       esac
     '').overrideAttrs {

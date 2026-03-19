@@ -11,23 +11,20 @@ let
 
   defaultRules = [
     {
-      patterns = [
-        "*.js"
-        "*.ts"
-        "*.jsx"
-        "*.tsx"
-        "*.cjs"
-        "*.mjs"
-      ];
-      handler = viewers.zat-js-viewer;
+      patterns = [ "*.js" "*.jsx" "*.cjs" "*.mjs" ];
+      handler = "${viewers.zat-js-viewer}/bin/zat-js-viewer --lang js";
+    }
+    {
+      patterns = [ "*.ts" "*.tsx" ];
+      handler = "${viewers.zat-js-viewer}/bin/zat-js-viewer --lang ts";
     }
     {
       patterns = [ "*.rs" ];
-      handler = viewers.zat-rust-viewer;
+      handler = "${viewers.zat-rust-viewer}/bin/zat-rust-viewer";
     }
     {
       patterns = [ "*.py" ];
-      handler = viewers.zat-python-viewer;
+      handler = "${viewers.zat-python-viewer}/bin/zat-python-viewer";
     }
   ];
 
@@ -38,8 +35,8 @@ let
         description = "File glob patterns to match (e.g. \"*.js\", \"*.ts\").";
       };
       handler = lib.mkOption {
-        type = lib.types.package;
-        description = "Viewer package to handle matched files.";
+        type = lib.types.str;
+        description = "Command to handle matched files (receives content via stdin).";
       };
     };
   };
