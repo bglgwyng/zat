@@ -1,6 +1,10 @@
 # zat
 
-`zat` (ざっと) is an outline viewer for LLMs. It shows file signatures and line numbers so LLMs can decide what to read in detail.
+`zat` is a code outline viewer. It shows exported symbols and line numbers at a glance.
+
+Works great as a tool for LLM coding agents — they can see the outline first, then `Read` only the parts they need.
+
+The name comes from Japanese ざっと (*zatto*), meaning "roughly" or "at a glance".
 
 ## Installation
 
