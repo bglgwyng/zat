@@ -44,21 +44,18 @@
           self',
           inputs',
           pkgs,
+          lib,
           system,
           ...
         }:
         let
-          evalZat = pkgs.lib.evalModules {
+          zatSubmodule = import ./submodule.nix { inherit inputs; } { inherit pkgs lib; };
+          evalZat = (lib.evalModules {
             modules = [
-              (import ./module.nix { inherit inputs; })
-              {
-                config = {
-                  _module.args = { inherit pkgs; };
-                  programs.zat.enable = true;
-                };
-              }
+              zatSubmodule
+              { enable = true; }
             ];
-          };
+          }).config;
         in
         {
           _module.args.pkgs = import inputs.nixpkgs {
@@ -67,7 +64,7 @@
               allowBroken = true;
             };
           };
-          packages.default = evalZat.config.programs.zat.package;
+          packages.default = evalZat.package;
           packages.tarball = pkgs.runCommand "zat-${system}.tar.gz" { } ''
             tar -czvf $out -C ${self'.packages.default}/bin .
           '';
