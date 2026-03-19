@@ -16,6 +16,7 @@
 
       flake = {
         nixosModules.default = ./module.nix;
+        darwinModules.default = ./module.nix;
       };
 
       systems = [
