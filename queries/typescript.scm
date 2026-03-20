@@ -43,7 +43,13 @@
   declaration: (interface_declaration
     body: (interface_body) @hide)) @show
 
-; Exported type alias
+; Exported type alias (object type, show members)
+(export_statement
+  "export" @strip
+  declaration: (type_alias_declaration
+    value: (object_type) @hide)) @show
+
+; Exported type alias (other)
 (export_statement
   "export" @strip
   declaration: (type_alias_declaration)) @show
@@ -107,6 +113,10 @@
   body: (interface_body) @hide) @show_if_ref
 
 (type_alias_declaration
+  name: (type_identifier) @name
+  value: (object_type) @hide) @show_if_ref
+
+(type_alias_declaration
   name: (type_identifier) @name) @show_if_ref
 
 (enum_declaration
@@ -132,6 +142,12 @@
 (interface_body
   (property_signature) @show.indented.noloc)
 (interface_body
+  (method_signature) @show.indented)
+
+; Object type members (for type aliases)
+(object_type
+  (property_signature) @show.indented.noloc)
+(object_type
   (method_signature) @show.indented)
 
 ; Enum members
