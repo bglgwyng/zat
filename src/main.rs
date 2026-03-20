@@ -64,6 +64,8 @@ struct ShowNode {
     show_if_ref: bool,
     referenced: bool,
     name: Option<String>,
+    hide_first_line: Option<String>,
+    hide_last_line: Option<String>,
 }
 
 fn parse_capture(name: &str) -> Option<ShowNode> {
@@ -94,6 +96,8 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
         show_if_ref: is_show_if_ref,
         referenced: false,
         name: None,
+        hide_first_line: None,
+        hide_last_line: None,
     })
 }
 
@@ -106,6 +110,20 @@ fn first_line_of(source: &str, node: &Node) -> String {
 fn last_line_of(source: &str, node: &Node) -> String {
     let text = &source[node.byte_range()];
     text.lines().last().unwrap_or("").trim().to_string()
+}
+
+fn trim_body_with<'a>(line: &'a str, body_first_line: Option<&str>) -> &'a str {
+    match body_first_line {
+        Some(body_fl) => {
+            let trimmed = line.trim_end();
+            if let Some(pos) = trimmed.rfind(body_fl) {
+                trimmed[..pos].trim_end()
+            } else {
+                trimmed
+            }
+        }
+        None => line.trim_end(),
+    }
 }
 
 fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<OutlineEntry> {
@@ -137,10 +155,16 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
 
     while let Some(m) = matches.next() {
         let mut match_show_key: Option<usize> = None;
+        let mut match_body: Option<(String, String)> = None;
         let mut appended = false;
         for cap in m.captures {
             let capture_name: &str = &query.capture_names()[cap.index as usize];
             let node = cap.node;
+
+            if capture_name == "hide" {
+                match_body = Some((first_line_of(source, &node), last_line_of(source, &node)));
+                continue;
+            }
 
             if capture_name == "strip" {
                 let text = source[node.byte_range()].trim().to_string();
@@ -179,6 +203,14 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 parsed.last_line = last_line_of(source, &node);
                 match_show_key = Some(start_byte);
                 show_nodes.entry(start_byte).or_insert(parsed);
+            }
+        }
+
+        // Apply @hide to the show node from this match
+        if let (Some(key), Some((hide_fl, hide_ll))) = (match_show_key, match_body) {
+            if let Some(node) = show_nodes.get_mut(&key) {
+                node.hide_first_line = Some(hide_fl);
+                node.hide_last_line = Some(hide_ll);
             }
         }
     }
@@ -282,8 +314,8 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
         let has_indent_children = children.iter().any(|c| c.indent);
 
         if !has_indent_children {
-            // Simple node, just show first line (trim trailing '{' since we don't expand)
-            let text = node.first_line.trim_end_matches('{').trim_end().to_string();
+            // Simple node, just show first line (hide body if @hide present)
+            let text = trim_body_with(&node.first_line, node.hide_first_line.as_deref()).to_string();
             entries.push(OutlineEntry {
                 text,
                 start_line: node.start_line,
@@ -314,8 +346,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                     continue;
                 }
 
-                // Trim trailing '{' for indented items that aren't expanded
-                let child_text = child.first_line.trim_end_matches('{').trim_end();
+                let child_text = trim_body_with(&child.first_line, child.hide_first_line.as_deref());
                 let formatted = if child.noindent {
                     child_text.to_string()
                 } else {
@@ -329,11 +360,10 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 });
             }
 
-            // Show closing line if it looks like a delimiter (e.g., "}", "};")
-            let last = node.last_line.trim_end_matches(';').trim();
-            if last == "}" || last == ")" {
+            // Show closing line from @hide
+            if let Some(ref hide_ll) = node.hide_last_line {
                 entries.push(OutlineEntry {
-                    text: node.last_line.clone(),
+                    text: hide_ll.clone(),
                     start_line: 0,
                     end_line: 0,
                     noloc: true,

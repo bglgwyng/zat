@@ -1,12 +1,14 @@
 ; Exported function
 (export_statement
   "export" @strip
-  declaration: (function_declaration)) @show
+  declaration: (function_declaration
+    body: (statement_block) @hide)) @show
 
 ; Exported class
 (export_statement
   "export" @strip
-  declaration: (class_declaration)) @show
+  declaration: (class_declaration
+    body: (class_body) @hide)) @show
 
 ; Exported variable/const
 (export_statement
@@ -16,7 +18,8 @@
 ; Export default
 (export_statement
   "export" @strip
-  (function_declaration)) @show
+  (function_declaration
+    body: (statement_block) @hide)) @show
 
 ; Named exports: resolve references
 (export_statement
@@ -37,7 +40,8 @@
 
 ; Class methods (public, identified by property_identifier name)
 (method_definition
-  name: (property_identifier)) @show.indent
+  name: (property_identifier)
+  body: (statement_block) @hide) @show.indent
 
 ; Class fields (public, identified by property_identifier)
 (field_definition

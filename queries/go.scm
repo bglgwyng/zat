@@ -1,10 +1,23 @@
 ; Functions
-(function_declaration) @show
+(function_declaration
+  body: (block) @hide) @show
 
 ; Methods
-(method_declaration) @show
+(method_declaration
+  body: (block) @hide) @show
 
-; Type declarations (struct, interface, simple types)
+; Struct type declaration
+(type_declaration
+  (type_spec
+    type: (struct_type
+      (field_declaration_list) @hide))) @show
+
+; Interface type declaration
+(type_declaration
+  (type_spec
+    type: (interface_type) @hide)) @show
+
+; Other type declarations
 (type_declaration) @show
 
 ; Struct fields

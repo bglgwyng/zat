@@ -1,5 +1,6 @@
 ; Function definitions
-(function_definition) @show
+(function_definition
+  body: (compound_statement) @hide) @show
 
 ; Function declarations
 (declaration
@@ -7,9 +8,19 @@
 
 ; Class
 (class_specifier
+  name: (_)
+  body: (field_declaration_list) @hide) @show
+
+; Class forward declaration
+(class_specifier
   name: (_)) @show
 
 ; Struct
+(struct_specifier
+  name: (_)
+  body: (field_declaration_list) @hide) @show
+
+; Struct forward declaration
 (struct_specifier
   name: (_)) @show
 
@@ -33,6 +44,11 @@
 
 ; Enum
 (enum_specifier
+  name: (_)
+  body: (enumerator_list) @hide) @show
+
+; Enum forward declaration
+(enum_specifier
   name: (_)) @show
 
 ; Enum values
@@ -40,7 +56,8 @@
 
 ; Namespace
 (namespace_definition
-  name: (_)) @show
+  name: (_)
+  body: (declaration_list) @hide) @show
 
 ; Declarations inside namespace
 (namespace_definition

@@ -1,12 +1,14 @@
 ; Exported function
 (export_statement
   "export" @strip
-  declaration: (function_declaration)) @show
+  declaration: (function_declaration
+    body: (statement_block) @hide)) @show
 
 ; Exported class
 (export_statement
   "export" @strip
-  declaration: (class_declaration)) @show
+  declaration: (class_declaration
+    body: (class_body) @hide)) @show
 
 ; Exported variable/const
 (export_statement
@@ -16,7 +18,8 @@
 ; Exported interface
 (export_statement
   "export" @strip
-  declaration: (interface_declaration)) @show
+  declaration: (interface_declaration
+    body: (interface_body) @hide)) @show
 
 ; Exported type alias
 (export_statement
@@ -26,12 +29,14 @@
 ; Exported enum
 (export_statement
   "export" @strip
-  declaration: (enum_declaration)) @show
+  declaration: (enum_declaration
+    body: (enum_body) @hide)) @show
 
 ; Export default
 (export_statement
   "export" @strip
-  (function_declaration)) @show
+  (function_declaration
+    body: (statement_block) @hide)) @show
 
 ; Named exports: resolve references
 (export_statement
@@ -60,7 +65,8 @@
   name: (identifier) @name) @show_if_ref
 
 ; Class methods (exclude private, strip "public")
-((method_definition) @show.indent
+((method_definition
+    body: (statement_block) @hide) @show.indent
   (#not-match? @show.indent "^private"))
 (method_definition
   ((accessibility_modifier) @strip

@@ -1,17 +1,25 @@
 ; Class
-(class_declaration) @show
+(class_declaration
+  body: (class_body) @hide) @show
 
 ; Interface
-(interface_declaration) @show
+(interface_declaration
+  body: (interface_body) @hide) @show
 
 ; Enum
-(enum_declaration) @show
+(enum_declaration
+  body: (enum_body) @hide) @show
 
 ; Methods
+(method_declaration
+  body: (block) @hide) @show.indent
+
+; Methods (abstract, no body)
 (method_declaration) @show.indent
 
 ; Constructors
-(constructor_declaration) @show.indent
+(constructor_declaration
+  body: (constructor_body) @hide) @show.indent
 
 ; Fields
 (field_declaration) @show.indent.noloc
