@@ -10,52 +10,35 @@ jobs:
     strategy:
       matrix:
         include:
-          - system: x86_64-linux
-          - system: aarch64-darwin
-          - system: x86_64-darwin
-    runs-on: ubuntu-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact: zat-aarch64-darwin
+          - target: x86_64-apple-darwin
+            os: macos-13
+            artifact: zat-x86_64-darwin
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: zat-x86_64-linux
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download viewer binaries
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p libexec/zat
-          viewers=("zat-js-viewer" "zat-rust-viewer" "zat-python-viewer")
-          for viewer in "${viewers[@]}"; do
-            rev=$(jq -r ".nodes.\"$viewer\".locked.rev" flake.lock)
-            owner=$(jq -r ".nodes.\"$viewer\".locked.owner" flake.lock)
-            repo=$(jq -r ".nodes.\"$viewer\".locked.repo" flake.lock)
-            tag=$(gh api "repos/$owner/$repo/git/matching-refs/tags/" --jq \
-              ".[] | select(.object.sha == \"$rev\" or .object.sha == null) | .ref" | head -1)
-            if [ -z "$tag" ]; then
-              # Check if any tag points to this commit via annotated tag objects
-              tag=$(gh api "repos/$owner/$repo/tags" --jq \
-                ".[] | select(.commit.sha == \"$rev\") | \"refs/tags/\" + .name" | head -1)
-            fi
-            if [ -z "$tag" ]; then
-              echo "ERROR: No release tag found for $viewer at commit $rev"
-              exit 1
-            fi
-            tag_name="${tag#refs/tags/}"
-            echo "Using $viewer $tag_name (commit $rev)"
-            gh release download "$tag_name" --repo "$owner/$repo" \
-              --pattern "${viewer}-${{ matrix.system }}.tar.gz" --dir /tmp
-            tar --no-overwrite-dir -xzf "/tmp/${viewer}-${{ matrix.system }}.tar.gz" -C libexec/zat
-          done
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --release
 
       - name: Package tarball
         run: |
-          mkdir -p pkg/bin pkg/libexec
-          install -m 755 bin/zat.sh pkg/bin/zat
-          cp -r libexec/zat pkg/libexec/zat
-          tar -czvf "zat-${{ matrix.system }}.tar.gz" -C pkg .
+          mkdir -p pkg/bin
+          cp target/release/zat pkg/bin/zat
+          tar -czvf "${{ matrix.artifact }}.tar.gz" -C pkg .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: zat-${{ matrix.system }}
+          name: ${{ matrix.artifact }}
           path: "*.tar.gz"
 
   release:
@@ -139,7 +122,6 @@ jobs:
 
             def install
               bin.install "bin/zat"
-              libexec.install Dir["libexec/zat"]
             end
 
             test do
