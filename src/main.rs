@@ -57,6 +57,7 @@ struct ShowNode {
     first_line: String,
     last_line: String,
     indent: bool,
+    noindent: bool,
     noloc: bool,
     show_after: bool,
     hide_after: bool,
@@ -82,6 +83,7 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
         first_line: String::new(),
         last_line: String::new(),
         indent: parts.contains("indent"),
+        noindent: parts.contains("noindent"),
         noloc: parts.contains("noloc"),
         show_after: is_show_after,
         hide_after: is_hide_after,
@@ -91,7 +93,6 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
 fn first_line_of(source: &str, node: &Node) -> String {
     let text = &source[node.byte_range()];
     let line = text.lines().next().unwrap_or(text).trim();
-    // Trim trailing opening brace for cleaner display, we'll add it back for blocks
     line.to_string()
 }
 
@@ -239,8 +240,13 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
 
                 // Trim trailing '{' for indented items that aren't expanded
                 let child_text = child.first_line.trim_end_matches('{').trim_end();
+                let formatted = if child.noindent {
+                    child_text.to_string()
+                } else {
+                    format!("  {}", child_text)
+                };
                 entries.push(OutlineEntry {
-                    text: format!("  {}", child_text),
+                    text: formatted,
                     start_line: child.start_line,
                     end_line: child.end_line,
                     noloc: child.noloc,

@@ -21,8 +21,8 @@
   (declaration) @show.indent)
 
 ; Public/protected access specifier: show label and enable members after
-((access_specifier) @show.indent.noloc.show_after
-  (#match? @show.indent.noloc.show_after "^(public|protected)$"))
+((access_specifier) @show.indent.noindent.noloc.show_after
+  (#match? @show.indent.noindent.noloc.show_after "^(public|protected)$"))
 
 ; Private: hide members after
 ((access_specifier) @hide_after
