@@ -42,7 +42,7 @@ jobs:
             echo "Using $viewer $tag_name (commit $rev)"
             gh release download "$tag_name" --repo "$owner/$repo" \
               --pattern "${viewer}-${{ matrix.system }}.tar.gz" --dir /tmp
-            tar -xzf "/tmp/${viewer}-${{ matrix.system }}.tar.gz" -C libexec/zat
+            tar --no-overwrite-dir -xzf "/tmp/${viewer}-${{ matrix.system }}.tar.gz" -C libexec/zat
           done
 
       - name: Package tarball
