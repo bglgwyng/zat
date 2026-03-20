@@ -29,12 +29,20 @@ zat src/lib.rs
 ```
 
 ```
-pub struct OutlineEntry // L8-L12
-pub struct ImportEntry // L14-L18
-pub fn extract_outline(source: &str) -> OutlineResult // L25-L166
+struct OutlineEntry { // L8-L12
+  signature: String
+  start_line: usize
+  end_line: usize
+}
+struct ImportEntry { // L14-L18
+  source_text: String
+  start_line: usize
+  end_line: usize
+}
+fn extract_outline(source: & str, path: & str) -> OutlineResult // L33-L196
 ```
 
-Only public/exported symbols are shown. Imports referenced in signatures are included.
+Only public/exported symbols are shown. Visibility modifiers and other boilerplate may be omitted for brevity. Struct fields and interface members are included.
 
 ### Directory outline
 
@@ -44,12 +52,15 @@ zat src/
 
 ```
 lib.rs:
-  pub struct Config // L5-L10
-  pub fn load(path: &str) -> Config // L12-L30
+  struct Config { // L5-L10
+    name: String
+    debug: bool
+  }
+  fn load(path: & str) -> Config // L12-L30
 main.rs:
 ```
 
-Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows their outlines. Falls back to file listing if no entry files found.
+Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows their outlines. `"."` in `directoryIndex` controls where `ls` output appears.
 
 ## Supported Languages
 
@@ -58,22 +69,11 @@ Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows thei
 | JS/TS/JSX/TSX | [zat-js-viewer](https://github.com/bglgwyng/zat-js-viewer) | oxc |
 | Rust | [zat-rust-viewer](https://github.com/bglgwyng/zat-rust-viewer) | syn |
 | Python | [zat-python-viewer](https://github.com/bglgwyng/zat-python-viewer) | rustpython-parser |
-| Other | built-in fallback | cat -n |
+| Other | built-in fallback | `cat -n` |
 
 ## Nix Customization
 
-### Override
-
-Viewers, entry files, and fallback are all configurable via Nix override:
-
-```nix
-(zat.packages.default.override {
-  directoryIndex = [ "index.ts" "mod.rs" "__init__.py" ];
-  # Add or replace rules/fallback as needed
-})
-```
-
-### NixOS Module
+### NixOS / nix-darwin Module
 
 ```nix
 # flake.nix inputs
@@ -82,17 +82,16 @@ inputs.zat.url = "github:bglgwyng/zat";
 # configuration.nix
 { inputs, ... }:
 {
-  imports = [ inputs.zat.nixosModules.default ];
+  imports = [ inputs.zat.nixosModules.default ]; # or darwinModules.default
 
   programs.zat = {
     enable = true;
     rules = [
       {
-        patterns = [ "*.js" "*.ts" "*.tsx" ];
-        handler = inputs.zat-js-viewer.packages.${system}.default;
+        patterns = [ "*.ts" "*.tsx" ];
+        handler = "${inputs.zat-js-viewer.packages.${system}.default}/bin/zat-js-viewer --lang ts";
       }
     ];
-    # "." in directoryIndex controls where `ls` appears in output
     directoryIndex = [ "index.ts" "lib.rs" "." ];
   };
 }
