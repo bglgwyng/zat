@@ -29,9 +29,13 @@
 ; Named exports
 (export_statement) @show
 
-; Class methods and fields
-(method_definition) @show.indent
-(public_field_definition) @show.indent
+; Class methods (exclude private)
+((method_definition) @show.indent
+  (#not-match? @show.indent "^private"))
+
+; Class fields (exclude private)
+((public_field_definition) @show.indent
+  (#not-match? @show.indent "^private"))
 
 ; Interface members
 (property_signature) @show.indent.noloc

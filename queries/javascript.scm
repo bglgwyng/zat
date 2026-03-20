@@ -17,6 +17,10 @@
 ; Named exports
 (export_statement) @show
 
-; Class methods and fields
-(method_definition) @show.indent
-(field_definition) @show.indent.noloc
+; Class methods (public, identified by property_identifier name)
+(method_definition
+  name: (property_identifier)) @show.indent
+
+; Class fields (public, identified by property_identifier)
+(field_definition
+  property: (property_identifier)) @show.indent.noloc
