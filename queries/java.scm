@@ -12,17 +12,17 @@
 
 ; Methods
 (method_declaration
-  body: (block) @hide) @show.indent
+  body: (block) @hide) @show.indented
 
 ; Methods (abstract, no body)
-(method_declaration) @show.indent
+(method_declaration) @show.indented
 
 ; Constructors
 (constructor_declaration
-  body: (constructor_body) @hide) @show.indent
+  body: (constructor_body) @hide) @show.indented
 
 ; Fields
-(field_declaration) @show.indent.noloc
+(field_declaration) @show.indented.noloc
 
 ; Enum constants
-(enum_constant) @show.indent.noloc
+(enum_constant) @show.indented.noloc

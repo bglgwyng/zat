@@ -115,24 +115,24 @@
 
 ; Class methods (exclude private, strip "public")
 ((method_definition
-    body: (statement_block) @hide) @show.indent
-  (#not-match? @show.indent "^private"))
+    body: (statement_block) @hide) @show.indented
+  (#not-match? @show.indented "^private"))
 (method_definition
   ((accessibility_modifier) @strip
     (#eq? @strip "public")))
 
 ; Class fields (exclude private, strip "public")
-((public_field_definition) @show.indent
-  (#not-match? @show.indent "^private"))
+((public_field_definition) @show.indented
+  (#not-match? @show.indented "^private"))
 (public_field_definition
   ((accessibility_modifier) @strip
     (#eq? @strip "public")))
 
 ; Interface members
 (interface_body
-  (property_signature) @show.indent.noloc)
+  (property_signature) @show.indented.noloc)
 (interface_body
-  (method_signature) @show.indent)
+  (method_signature) @show.indented)
 
 ; Enum members
-(enum_assignment) @show.indent.noloc
+(enum_assignment) @show.indented.noloc

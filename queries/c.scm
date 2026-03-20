@@ -16,7 +16,7 @@
   name: (_)) @show
 
 ; Struct fields
-(field_declaration) @show.indent.noloc
+(field_declaration) @show.indented.noloc
 
 ; Enum
 (enum_specifier
@@ -28,7 +28,7 @@
   name: (_)) @show
 
 ; Enum values
-(enumerator) @show.indent.noloc
+(enumerator) @show.indented.noloc
 
 ; Typedef
 (type_definition) @show

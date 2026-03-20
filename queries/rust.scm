@@ -18,7 +18,7 @@
   body: (enum_variant_list) @hide) @show
 
 ; Enum variants
-(enum_variant) @show.indent.noloc
+(enum_variant) @show.indented.noloc
 
 ; Public trait
 (trait_item
@@ -27,7 +27,7 @@
 
 ; Trait method signatures
 (declaration_list
-  (function_signature_item) @show.indent)
+  (function_signature_item) @show.indented)
 
 ; Public impl block
 (impl_item
@@ -38,7 +38,7 @@
   body: (declaration_list
     (function_item
       (visibility_modifier) @strip
-      body: (block) @hide) @show.indent))
+      body: (block) @hide) @show.indented))
 
 ; Public type alias
 (type_item

@@ -21,7 +21,7 @@
 (type_declaration) @show
 
 ; Struct fields
-(field_declaration) @show.indent.noloc
+(field_declaration) @show.indented.noloc
 
 ; Interface methods
-(method_elem) @show.indent.noloc
+(method_elem) @show.indented.noloc

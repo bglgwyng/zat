@@ -25,16 +25,16 @@
   name: (_)) @show
 
 ; Fields inside class/struct
-(field_declaration) @show.indent.noloc
+(field_declaration) @show.indented.noloc
 
 ; Declarations inside class/struct (constructors, etc.)
 (field_declaration_list
-  (declaration) @show.indent)
+  (declaration) @show.indented)
 
 ; Public/protected access specifier: show label and enable members after
 (field_declaration_list
-  ((access_specifier) @show.indent.noindent.noloc.show_after
-    (#match? @show.indent.noindent.noloc.show_after "^(public|protected)$"))
+  ((access_specifier) @show.indent.noloc.show_after
+    (#match? @show.indent.noloc.show_after "^(public|protected)$"))
   . ":" @append)
 
 ; Private: hide members after
@@ -52,7 +52,7 @@
   name: (_)) @show
 
 ; Enum values
-(enumerator) @show.indent.noloc
+(enumerator) @show.indented.noloc
 
 ; Namespace
 (namespace_definition
@@ -62,7 +62,7 @@
 ; Declarations inside namespace
 (namespace_definition
   body: (declaration_list
-    (_) @show.indent))
+    (_) @show.indented))
 
 ; Typedef
 (type_definition) @show

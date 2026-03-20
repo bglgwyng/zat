@@ -70,8 +70,8 @@
 ; Class methods (public, identified by property_identifier name)
 (method_definition
   name: (property_identifier)
-  body: (statement_block) @hide) @show.indent
+  body: (statement_block) @hide) @show.indented
 
 ; Class fields (public, identified by property_identifier)
 (field_definition
-  property: (property_identifier)) @show.indent.noloc
+  property: (property_identifier)) @show.indented.noloc

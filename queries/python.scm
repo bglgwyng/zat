@@ -12,12 +12,12 @@
 ; Class methods and attributes
 (class_definition
   body: (block
-    (function_definition) @show.indent))
+    (function_definition) @show.indented))
 
 (class_definition
   body: (block
-    (decorated_definition) @show.indent))
+    (decorated_definition) @show.indented))
 
 (class_definition
   body: (block
-    (expression_statement) @show.indent.noloc))
+    (expression_statement) @show.indented.noloc))

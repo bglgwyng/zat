@@ -56,8 +56,8 @@ struct ShowNode {
     start_line: usize,
     end_line: usize,
     first_line: String,
+    indented: bool,
     indent: bool,
-    noindent: bool,
     noloc: bool,
     show_after: bool,
     hide_after: bool,
@@ -87,8 +87,8 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
         start_line: 0,
         end_line: 0,
         first_line: String::new(),
+        indented: parts.contains("indented"),
         indent: parts.contains("indent"),
-        noindent: parts.contains("noindent"),
         noloc: parts.contains("noloc"),
         show_after: is_show_after,
         hide_after: is_hide_after,
@@ -279,14 +279,14 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
         }
     }
 
-    // Build output: for each @show, find contained @show.indent children
+    // Build output: for each @show, find contained @show.indented children
     let show_vec: Vec<&ShowNode> = show_nodes.values().collect();
     let mut entries = Vec::new();
     let mut skip_until: Option<usize> = None;
 
     for node in show_vec.iter() {
-        // Skip indent/hide_after nodes (they're handled by their parent @show)
-        if node.indent || node.hide_after {
+        // Skip child/toggle nodes (they're handled by their parent @show)
+        if node.indented || node.indent || node.hide_after {
             continue;
         }
 
@@ -303,20 +303,19 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
             skip_until = None;
         }
 
-        // Find children contained within this node (both @show.indent and visibility toggles)
+        // Find children contained within this node
         let children: Vec<&ShowNode> = show_vec.iter()
             .filter(|child| {
-                (child.indent || child.hide_after || child.show_after)
+                (child.indented || child.indent || child.hide_after || child.show_after)
                     && child.start_byte > node.start_byte
                     && child.end_byte <= node.end_byte
             })
             .copied()
             .collect();
 
-        // Filter out children that are only hide_after (no show) with no indent children
-        let has_indent_children = children.iter().any(|c| c.indent);
+        let has_children = children.iter().any(|c| c.indented || c.indent);
 
-        if !has_indent_children {
+        if !has_children {
             // Simple node, just show first line (@hide already applied)
             let text = node.first_line.trim_end().to_string();
             entries.push(OutlineEntry {
@@ -326,7 +325,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 noloc: node.noloc,
             });
         } else {
-            // Block node: first line + indented children + closing line
+            // Block node: first line + children + closing line
             entries.push(OutlineEntry {
                 text: node.first_line.clone(),
                 start_line: node.start_line,
@@ -345,12 +344,12 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                     visible = true;
                 }
 
-                if !visible || !child.indent {
+                if !visible || !(child.indented || child.indent) {
                     continue;
                 }
 
                 let child_text = child.first_line.trim_end();
-                let formatted = if child.noindent {
+                let formatted = if child.indent {
                     child_text.to_string()
                 } else {
                     format!("  {}", child_text)
