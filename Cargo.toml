@@ -1,5 +1,5 @@
 [package]
-name = "zat-tree-sitter-viewer"
+name = "zat"
 version = "0.1.0"
 edition = "2024"
 

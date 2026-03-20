@@ -1,19 +1,11 @@
 {
-  description = "zatto files and directories";
+  description = "zat - code outline viewer";
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    zat-js-viewer = {
-      url = "github:bglgwyng/zat-js-viewer";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    zat-rust-viewer = {
-      url = "github:bglgwyng/zat-rust-viewer";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    zat-python-viewer = {
-      url = "github:bglgwyng/zat-python-viewer";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -21,17 +13,6 @@
   outputs =
     inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ ];
-
-      flake =
-        let
-          systemModule = import ./system-module.nix { inherit inputs; };
-        in
-        {
-          nixosModules.default = systemModule;
-          darwinModules.default = systemModule;
-        };
-
       systems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -40,32 +21,31 @@
       ];
       perSystem =
         {
-          config,
-          self',
-          inputs',
           pkgs,
-          lib,
           system,
           ...
         }:
-        let
-          zatSubmodule = import ./submodule.nix { inherit inputs; } { inherit pkgs lib; };
-          evalZat =
-            (lib.evalModules {
-              modules = [
-                zatSubmodule
-                { enable = true; }
-              ];
-            }).config;
-        in
         {
           _module.args.pkgs = import inputs.nixpkgs {
             inherit system;
-            config = {
-              allowBroken = true;
-            };
+            overlays = [
+              (import inputs.rust-overlay)
+            ];
+            config = { };
           };
-          packages.default = evalZat.package;
+          packages.default = pkgs.rustPlatform.buildRustPackage {
+            pname = "zat";
+            version = "0.1.0";
+            src = ./.;
+            cargoLock.lockFile = ./Cargo.lock;
+          };
+          devShells.default = pkgs.mkShell {
+            nativeBuildInputs = [
+              (pkgs.rust-bin.stable."1.85.0".default.override {
+                extensions = [ "rust-src" ];
+              })
+            ];
+          };
           formatter = pkgs.nixfmt-rfc-style;
         };
     };
