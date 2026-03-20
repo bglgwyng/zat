@@ -19,4 +19,4 @@
 
 ; Class methods and fields
 (method_definition) @show.indent
-(field_definition) @show.indent
+(field_definition) @show.indent.noloc

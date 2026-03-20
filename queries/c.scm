@@ -10,14 +10,14 @@
   name: (_)) @show
 
 ; Struct fields
-(field_declaration) @show.indent
+(field_declaration) @show.indent.noloc
 
 ; Enum
 (enum_specifier
   name: (_)) @show
 
 ; Enum values
-(enumerator) @show.indent
+(enumerator) @show.indent.noloc
 
 ; Typedef
 (type_definition) @show

@@ -5,13 +5,13 @@
 (struct_item) @show
 
 ; Struct fields
-(field_declaration) @show.indent
+(field_declaration) @show.indent.noloc
 
 ; Enum
 (enum_item) @show
 
 ; Enum variants
-(enum_variant) @show.indent
+(enum_variant) @show.indent.noloc
 
 ; Trait
 (trait_item) @show

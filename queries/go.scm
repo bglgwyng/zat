@@ -8,7 +8,7 @@
 (type_declaration) @show
 
 ; Struct fields
-(field_declaration) @show.indent
+(field_declaration) @show.indent.noloc
 
 ; Interface methods
-(method_elem) @show.indent
+(method_elem) @show.indent.noloc

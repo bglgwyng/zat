@@ -13,22 +13,22 @@
 (struct_specifier
   name: (_)) @show
 
-; Fields and methods inside class/struct
-(field_declaration) @show.indent
+; Fields inside class/struct
+(field_declaration) @show.indent.noloc
 
 ; Declarations inside class/struct (constructors, etc.)
 (field_declaration_list
   (declaration) @show.indent)
 
 ; Access specifiers
-(access_specifier) @show.indent
+(access_specifier) @show.indent.noloc
 
 ; Enum
 (enum_specifier
   name: (_)) @show
 
 ; Enum values
-(enumerator) @show.indent
+(enumerator) @show.indent.noloc
 
 ; Namespace
 (namespace_definition

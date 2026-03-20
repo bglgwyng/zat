@@ -34,8 +34,8 @@
 (public_field_definition) @show.indent
 
 ; Interface members
-(property_signature) @show.indent
+(property_signature) @show.indent.noloc
 (method_signature) @show.indent
 
 ; Enum members
-(enum_assignment) @show.indent
+(enum_assignment) @show.indent.noloc

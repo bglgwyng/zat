@@ -14,7 +14,7 @@
 (constructor_declaration) @show.indent
 
 ; Fields
-(field_declaration) @show.indent
+(field_declaration) @show.indent.noloc
 
 ; Enum constants
-(enum_constant) @show.indent
+(enum_constant) @show.indent.noloc

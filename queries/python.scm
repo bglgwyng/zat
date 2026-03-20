@@ -20,4 +20,4 @@
 
 (class_definition
   body: (block
-    (expression_statement) @show.indent))
+    (expression_statement) @show.indent.noloc))

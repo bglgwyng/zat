@@ -30,7 +30,7 @@ fn main() {
     let entries = extract_outline(&source, language, query_src);
     for entry in &entries {
         print!("{}", entry.text);
-        if entry.start_line > 0 {
+        if entry.start_line > 0 && !entry.noloc {
             if entry.end_line > entry.start_line {
                 println!(" // L{}-L{}", entry.start_line, entry.end_line);
             } else {
@@ -46,6 +46,7 @@ struct OutlineEntry {
     text: String,
     start_line: usize,
     end_line: usize,
+    noloc: bool,
 }
 
 struct ShowNode {
@@ -56,6 +57,7 @@ struct ShowNode {
     first_line: String,
     last_line: String,
     indent: bool,
+    noloc: bool,
 }
 
 fn first_line_of(source: &str, node: &Node) -> String {
@@ -97,9 +99,11 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
         for cap in m.captures {
             let capture_name: &str = &query.capture_names()[cap.index as usize];
             let node = cap.node;
-            let indent = capture_name == "show.indent";
+            let noloc = capture_name.ends_with(".noloc");
+            let base_name = capture_name.trim_end_matches(".noloc");
+            let indent = base_name == "show.indent";
 
-            if capture_name == "show" || capture_name == "show.indent" {
+            if base_name == "show" || base_name == "show.indent" {
                 let start_byte = node.start_byte();
                 // Don't overwrite if already captured (first match wins)
                 show_nodes.entry(start_byte).or_insert(ShowNode {
@@ -110,6 +114,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                     first_line: first_line_of(source, &node),
                     last_line: last_line_of(source, &node),
                     indent,
+                    noloc,
                 });
             }
         }
@@ -151,6 +156,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 text,
                 start_line: node.start_line,
                 end_line: node.end_line,
+                noloc: node.noloc,
             });
         } else {
             // Block node: first line + indented children + closing line
@@ -158,6 +164,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 text: node.first_line.clone(),
                 start_line: node.start_line,
                 end_line: node.end_line,
+                noloc: node.noloc,
             });
 
             for child in &children {
@@ -167,6 +174,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                     text: format!("  {}", child_text),
                     start_line: child.start_line,
                     end_line: child.end_line,
+                    noloc: child.noloc,
                 });
             }
 
@@ -177,6 +185,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                     text: node.last_line.clone(),
                     start_line: 0,
                     end_line: 0,
+                    noloc: true,
                 });
             }
 
