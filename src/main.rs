@@ -163,10 +163,6 @@ fn collect_body_members(source: &str, body_node: &Node) -> Vec<String> {
     let mut members = Vec::new();
     let mut cursor = body_node.walk();
     for child in body_node.named_children(&mut cursor) {
-        // Skip access specifiers (public:, private:, protected:)
-        if child.kind() == "access_specifier" {
-            continue;
-        }
         let text = &source[child.byte_range()];
         let first_line = text.lines().next().unwrap_or(text).trim();
         let sig = if let Some(pos) = first_line.find('{') {
