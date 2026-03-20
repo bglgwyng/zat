@@ -33,9 +33,9 @@ jobs:
 
       - name: Package tarball
         run: |
-          mkdir -p pkg/bin
-          cp target/${{ matrix.target }}/release/zat pkg/bin/zat
-          tar -czvf "${{ matrix.artifact }}.tar.gz" -C pkg .
+          mkdir -p pkg
+          cp target/${{ matrix.target }}/release/zat pkg/zat
+          tar -czvf "${{ matrix.artifact }}.tar.gz" -C pkg zat
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -123,7 +123,7 @@ jobs:
             end
 
             def install
-              bin.install "bin/zat"
+              bin.install "zat"
             end
 
             test do
