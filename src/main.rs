@@ -122,11 +122,19 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
 
     // Collect all @show and @show.indent nodes
     let mut show_nodes: BTreeMap<usize, ShowNode> = BTreeMap::new();
+    // Collect @_strip captures: (parent_start_byte, strip_text)
+    let mut strip_texts: Vec<(usize, usize, String)> = Vec::new();
 
     while let Some(m) = matches.next() {
         for cap in m.captures {
             let capture_name: &str = &query.capture_names()[cap.index as usize];
             let node = cap.node;
+
+            if capture_name == "strip" {
+                let text = source[node.byte_range()].trim().to_string();
+                strip_texts.push((node.start_byte(), node.end_byte(), text));
+                continue;
+            }
 
             if let Some(mut parsed) = parse_capture(capture_name) {
                 let start_byte = node.start_byte();
@@ -138,6 +146,28 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 parsed.last_line = last_line_of(source, &node);
                 // Don't overwrite if already captured (first match wins)
                 show_nodes.entry(start_byte).or_insert(parsed);
+            }
+        }
+    }
+
+    // Apply @strip: remove stripped text from the smallest containing show node
+    for (strip_start, strip_end, strip_text) in &strip_texts {
+        let mut best: Option<usize> = None;
+        let mut best_size = usize::MAX;
+        for (&key, node) in show_nodes.iter() {
+            if *strip_start >= node.start_byte && *strip_end <= node.end_byte {
+                let size = node.end_byte - node.start_byte;
+                if size < best_size {
+                    best = Some(key);
+                    best_size = size;
+                }
+            }
+        }
+        if let Some(key) = best {
+            if let Some(node) = show_nodes.get_mut(&key) {
+                node.first_line = node.first_line
+                    .replace(&format!("{} ", strip_text), "")
+                    .replace(strip_text.as_str(), "");
             }
         }
     }

@@ -29,13 +29,19 @@
 ; Named exports
 (export_statement) @show
 
-; Class methods (exclude private)
+; Class methods (exclude private, strip "public")
 ((method_definition) @show.indent
   (#not-match? @show.indent "^private"))
+(method_definition
+  ((accessibility_modifier) @strip
+    (#eq? @strip "public")))
 
-; Class fields (exclude private)
+; Class fields (exclude private, strip "public")
 ((public_field_definition) @show.indent
   (#not-match? @show.indent "^private"))
+(public_field_definition
+  ((accessibility_modifier) @strip
+    (#eq? @strip "public")))
 
 ; Interface members
 (property_signature) @show.indent.noloc
