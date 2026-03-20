@@ -1,44 +1,47 @@
-; Function
-(function_item) @show
+; Public function
+(function_item
+  (visibility_modifier) @strip) @show
 
-; Struct
-(struct_item) @show
+; Public struct
+(struct_item
+  (visibility_modifier) @strip) @show
 
-; Struct fields
-(field_declaration) @show.indent.noloc
-
-; Enum
-(enum_item) @show
+; Public enum
+(enum_item
+  (visibility_modifier) @strip) @show
 
 ; Enum variants
 (enum_variant) @show.indent.noloc
 
-; Trait
-(trait_item) @show
+; Public trait
+(trait_item
+  (visibility_modifier) @strip) @show
 
 ; Trait method signatures
 (declaration_list
   (function_signature_item) @show.indent)
 
-; Impl block
+; Public impl block
 (impl_item) @show
 
-; Impl methods
+; Impl methods (pub)
 (impl_item
   body: (declaration_list
-    (function_item) @show.indent))
+    (function_item
+      (visibility_modifier) @strip) @show.indent))
 
-; Type alias
-(type_item) @show
+; Public type alias
+(type_item
+  (visibility_modifier) @strip) @show
 
-; Const
-(const_item) @show
+; Public const
+(const_item
+  (visibility_modifier) @strip) @show
 
-; Static
-(static_item) @show
+; Public static
+(static_item
+  (visibility_modifier) @strip) @show
 
-; Mod
-(mod_item) @show
-
-; Use
-(use_declaration) @show
+; Public mod
+(mod_item
+  (visibility_modifier) @strip) @show
