@@ -134,8 +134,9 @@ fn view_directory(dir: &Path) {
             if printed {
                 println!();
             }
+            println!(".:");
             for name in &names {
-                println!("{}", name);
+                println!("  {}", name);
             }
         }
     }
