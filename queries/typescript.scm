@@ -10,6 +10,19 @@
   declaration: (class_declaration
     body: (class_body) @hide)) @show
 
+; Exported variable/const (non-literal value, hide = value)
+(export_statement
+  "export" @strip
+  declaration: (lexical_declaration
+    (variable_declarator
+      "=" @hide
+      value: [(arrow_function) (function_expression) (object) (array)
+              (call_expression) (new_expression) (await_expression)
+              (member_expression) (subscript_expression) (identifier)
+              (binary_expression) (unary_expression) (parenthesized_expression)
+              (template_string) (class) (satisfies_expression)
+              (as_expression) (non_null_expression)] @hide))) @show
+
 ; Exported variable/const (typed, hide = value)
 (export_statement
   "export" @strip
@@ -19,23 +32,7 @@
       "=" @hide
       value: (_) @hide))) @show
 
-; Exported variable/const (arrow function, hide body)
-(export_statement
-  "export" @strip
-  declaration: (lexical_declaration
-    (variable_declarator
-      value: (arrow_function
-        body: (statement_block) @hide)))) @show
-
-; Exported variable/const (function expression, hide body)
-(export_statement
-  "export" @strip
-  declaration: (lexical_declaration
-    (variable_declarator
-      value: (function_expression
-        body: (statement_block) @hide)))) @show
-
-; Exported variable/const (fallback)
+; Exported variable/const (fallback - keeps literal values)
 (export_statement
   "export" @strip
   declaration: (lexical_declaration)) @show
@@ -63,6 +60,11 @@
   (function_declaration
     body: (statement_block) @hide)) @show
 
+; Re-exports
+(export_statement
+  "export" @strip
+  source: (string)) @show
+
 ; Named exports: resolve references
 (export_statement
   (export_clause
@@ -70,6 +72,24 @@
       name: (identifier) @ref)))
 
 ; Non-exported declarations (for @ref resolution)
+(lexical_declaration
+  (variable_declarator
+    name: (identifier) @name
+    "=" @hide
+    value: [(arrow_function) (function_expression) (object) (array)
+            (call_expression) (new_expression) (await_expression)
+            (member_expression) (subscript_expression) (identifier)
+            (binary_expression) (unary_expression) (parenthesized_expression)
+            (template_string) (class) (satisfies_expression)
+            (as_expression) (non_null_expression)] @hide)) @show_if_ref
+
+(lexical_declaration
+  (variable_declarator
+    name: (identifier) @name
+    type: (type_annotation)
+    "=" @hide
+    value: (_) @hide)) @show_if_ref
+
 (lexical_declaration
   (variable_declarator
     name: (identifier) @name)) @show_if_ref
@@ -109,8 +129,10 @@
     (#eq? @strip "public")))
 
 ; Interface members
-(property_signature) @show.indent.noloc
-(method_signature) @show.indent
+(interface_body
+  (property_signature) @show.indent.noloc)
+(interface_body
+  (method_signature) @show.indent)
 
 ; Enum members
 (enum_assignment) @show.indent.noloc

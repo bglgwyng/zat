@@ -10,23 +10,19 @@
   declaration: (class_declaration
     body: (class_body) @hide)) @show
 
-; Exported variable/const (arrow function, hide body)
+; Exported variable/const (non-literal value, hide = value)
 (export_statement
   "export" @strip
   declaration: (lexical_declaration
     (variable_declarator
-      value: (arrow_function
-        body: (statement_block) @hide)))) @show
+      "=" @hide
+      value: [(arrow_function) (function_expression) (object) (array)
+              (call_expression) (new_expression) (await_expression)
+              (member_expression) (subscript_expression) (identifier)
+              (binary_expression) (unary_expression) (parenthesized_expression)
+              (template_string) (class)] @hide))) @show
 
-; Exported variable/const (function expression, hide body)
-(export_statement
-  "export" @strip
-  declaration: (lexical_declaration
-    (variable_declarator
-      value: (function_expression
-        body: (statement_block) @hide)))) @show
-
-; Exported variable/const (fallback)
+; Exported variable/const (fallback - keeps literal values)
 (export_statement
   "export" @strip
   declaration: (lexical_declaration)) @show
@@ -37,6 +33,11 @@
   (function_declaration
     body: (statement_block) @hide)) @show
 
+; Re-exports
+(export_statement
+  "export" @strip
+  source: (string)) @show
+
 ; Named exports: resolve references
 (export_statement
   (export_clause
@@ -44,6 +45,16 @@
       name: (identifier) @ref)))
 
 ; Non-exported declarations (for @ref resolution)
+(lexical_declaration
+  (variable_declarator
+    name: (identifier) @name
+    "=" @hide
+    value: [(arrow_function) (function_expression) (object) (array)
+            (call_expression) (new_expression) (await_expression)
+            (member_expression) (subscript_expression) (identifier)
+            (binary_expression) (unary_expression) (parenthesized_expression)
+            (template_string) (class)] @hide)) @show_if_ref
+
 (lexical_declaration
   (variable_declarator
     name: (identifier) @name)) @show_if_ref
