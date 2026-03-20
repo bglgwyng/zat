@@ -56,7 +56,6 @@ struct ShowNode {
     start_line: usize,
     end_line: usize,
     first_line: String,
-    last_line: String,
     indent: bool,
     noindent: bool,
     noloc: bool,
@@ -78,7 +77,7 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
     let is_hide_after = parts.contains("hide_after");
     let is_show_after = parts.contains("show_after");
 
-    if !is_show && !is_show_if_ref && !is_hide_after {
+    if !is_show && !is_show_if_ref && !is_hide_after && !is_show_after {
         return None;
     }
 
@@ -88,7 +87,6 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
         start_line: 0,
         end_line: 0,
         first_line: String::new(),
-        last_line: String::new(),
         indent: parts.contains("indent"),
         noindent: parts.contains("noindent"),
         noloc: parts.contains("noloc"),
@@ -108,9 +106,19 @@ fn first_line_of(source: &str, node: &Node) -> String {
     line.to_string()
 }
 
-fn last_line_of(source: &str, node: &Node) -> String {
-    let text = &source[node.byte_range()];
-    text.lines().last().unwrap_or("").trim().to_string()
+fn find_smallest_containing(show_nodes: &BTreeMap<usize, ShowNode>, start: usize, end: usize) -> Option<usize> {
+    let mut best: Option<usize> = None;
+    let mut best_size = usize::MAX;
+    for (&key, node) in show_nodes.iter() {
+        if start >= node.start_byte && end <= node.end_byte {
+            let size = node.end_byte - node.start_byte;
+            if size < best_size {
+                best = Some(key);
+                best_size = size;
+            }
+        }
+    }
+    best
 }
 
 fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<OutlineEntry> {
@@ -194,7 +202,6 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 parsed.start_line = node.start_position().row + 1;
                 parsed.end_line = node.end_position().row + 1;
                 parsed.first_line = first_line_of(source, &node);
-                parsed.last_line = last_line_of(source, &node);
                 match_show_key = Some(start_byte);
                 show_nodes.entry(start_byte).or_insert(parsed);
             }
@@ -221,18 +228,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
 
     // Apply @name: assign name to the smallest containing show node
     for (name_start, name_end, name_text) in &name_captures {
-        let mut best: Option<usize> = None;
-        let mut best_size = usize::MAX;
-        for (&key, node) in show_nodes.iter() {
-            if *name_start >= node.start_byte && *name_end <= node.end_byte {
-                let size = node.end_byte - node.start_byte;
-                if size < best_size {
-                    best = Some(key);
-                    best_size = size;
-                }
-            }
-        }
-        if let Some(key) = best {
+        if let Some(key) = find_smallest_containing(&show_nodes, *name_start, *name_end) {
             if let Some(node) = show_nodes.get_mut(&key) {
                 node.name = Some(name_text.clone());
             }
@@ -261,22 +257,15 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
 
     // Apply @strip: remove stripped text from the smallest containing show node
     for (strip_start, strip_end, strip_text) in &strip_texts {
-        let mut best: Option<usize> = None;
-        let mut best_size = usize::MAX;
-        for (&key, node) in show_nodes.iter() {
-            if *strip_start >= node.start_byte && *strip_end <= node.end_byte {
-                let size = node.end_byte - node.start_byte;
-                if size < best_size {
-                    best = Some(key);
-                    best_size = size;
-                }
-            }
-        }
-        if let Some(key) = best {
+        if let Some(key) = find_smallest_containing(&show_nodes, *strip_start, *strip_end) {
             if let Some(node) = show_nodes.get_mut(&key) {
-                node.first_line = node.first_line
-                    .replace(&format!("{} ", strip_text), "")
-                    .replace(strip_text.as_str(), "");
+                let with_space = format!("{} ", strip_text);
+                let replaced = node.first_line.replacen(&with_space, "", 1);
+                if replaced != node.first_line {
+                    node.first_line = replaced;
+                } else {
+                    node.first_line = node.first_line.replacen(strip_text.as_str(), "", 1);
+                }
             }
         }
     }
