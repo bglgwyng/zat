@@ -58,6 +58,34 @@ struct ShowNode {
     last_line: String,
     indent: bool,
     noloc: bool,
+    show_after: bool,
+    hide_after: bool,
+}
+
+fn parse_capture(name: &str) -> Option<ShowNode> {
+    let parts: std::collections::HashSet<&str> = name.split('.').collect();
+
+    // Must have "show" or "hide_after" as base
+    let is_show = parts.contains("show");
+    let is_hide_after = parts.contains("hide_after");
+    let is_show_after = parts.contains("show_after");
+
+    if !is_show && !is_hide_after {
+        return None;
+    }
+
+    Some(ShowNode {
+        start_byte: 0,
+        end_byte: 0,
+        start_line: 0,
+        end_line: 0,
+        first_line: String::new(),
+        last_line: String::new(),
+        indent: parts.contains("indent"),
+        noloc: parts.contains("noloc"),
+        show_after: is_show_after,
+        hide_after: is_hide_after,
+    })
 }
 
 fn first_line_of(source: &str, node: &Node) -> String {
@@ -99,23 +127,17 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
         for cap in m.captures {
             let capture_name: &str = &query.capture_names()[cap.index as usize];
             let node = cap.node;
-            let noloc = capture_name.ends_with(".noloc");
-            let base_name = capture_name.trim_end_matches(".noloc");
-            let indent = base_name == "show.indent";
 
-            if base_name == "show" || base_name == "show.indent" {
+            if let Some(mut parsed) = parse_capture(capture_name) {
                 let start_byte = node.start_byte();
+                parsed.start_byte = start_byte;
+                parsed.end_byte = node.end_byte();
+                parsed.start_line = node.start_position().row + 1;
+                parsed.end_line = node.end_position().row + 1;
+                parsed.first_line = first_line_of(source, &node);
+                parsed.last_line = last_line_of(source, &node);
                 // Don't overwrite if already captured (first match wins)
-                show_nodes.entry(start_byte).or_insert(ShowNode {
-                    start_byte,
-                    end_byte: node.end_byte(),
-                    start_line: node.start_position().row + 1,
-                    end_line: node.end_position().row + 1,
-                    first_line: first_line_of(source, &node),
-                    last_line: last_line_of(source, &node),
-                    indent,
-                    noloc,
-                });
+                show_nodes.entry(start_byte).or_insert(parsed);
             }
         }
     }
@@ -126,8 +148,8 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
     let mut skip_until: Option<usize> = None;
 
     for node in show_vec.iter() {
-        // Skip @show.indent nodes (they're handled by their parent @show)
-        if node.indent {
+        // Skip indent/hide_after nodes (they're handled by their parent @show)
+        if node.indent || node.hide_after {
             continue;
         }
 
@@ -139,17 +161,20 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
             skip_until = None;
         }
 
-        // Find @show.indent children contained within this node
+        // Find children contained within this node (both @show.indent and visibility toggles)
         let children: Vec<&ShowNode> = show_vec.iter()
             .filter(|child| {
-                child.indent
+                (child.indent || child.hide_after || child.show_after)
                     && child.start_byte > node.start_byte
                     && child.end_byte <= node.end_byte
             })
             .copied()
             .collect();
 
-        if children.is_empty() {
+        // Filter out children that are only hide_after (no show) with no indent children
+        let has_indent_children = children.iter().any(|c| c.indent);
+
+        if !has_indent_children {
             // Simple node, just show first line (trim trailing '{' since we don't expand)
             let text = node.first_line.trim_end_matches('{').trim_end().to_string();
             entries.push(OutlineEntry {
@@ -167,7 +192,21 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 noloc: node.noloc,
             });
 
+            let mut visible = true;
             for child in &children {
+                // Handle visibility toggles
+                if child.hide_after {
+                    visible = false;
+                    continue;
+                }
+                if child.show_after {
+                    visible = true;
+                }
+
+                if !visible || !child.indent {
+                    continue;
+                }
+
                 // Trim trailing '{' for indented items that aren't expanded
                 let child_text = child.first_line.trim_end_matches('{').trim_end();
                 entries.push(OutlineEntry {

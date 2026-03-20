@@ -20,8 +20,13 @@
 (field_declaration_list
   (declaration) @show.indent)
 
-; Access specifiers
-(access_specifier) @show.indent.noloc
+; Public/protected access specifier: show label and enable members after
+((access_specifier) @show.indent.noloc.show_after
+  (#match? @show.indent.noloc.show_after "^(public|protected)$"))
+
+; Private: hide members after
+((access_specifier) @hide_after
+  (#match? @hide_after "^private$"))
 
 ; Enum
 (enum_specifier
