@@ -10,7 +10,23 @@
   declaration: (class_declaration
     body: (class_body) @hide)) @show
 
-; Exported variable/const
+; Exported variable/const (arrow function, hide body)
+(export_statement
+  "export" @strip
+  declaration: (lexical_declaration
+    (variable_declarator
+      value: (arrow_function
+        body: (statement_block) @hide)))) @show
+
+; Exported variable/const (function expression, hide body)
+(export_statement
+  "export" @strip
+  declaration: (lexical_declaration
+    (variable_declarator
+      value: (function_expression
+        body: (statement_block) @hide)))) @show
+
+; Exported variable/const (fallback)
 (export_statement
   "export" @strip
   declaration: (lexical_declaration)) @show
@@ -33,10 +49,12 @@
     name: (identifier) @name)) @show_if_ref
 
 (function_declaration
-  name: (identifier) @name) @show_if_ref
+  name: (identifier) @name
+  body: (statement_block) @hide) @show_if_ref
 
 (class_declaration
-  name: (identifier) @name) @show_if_ref
+  name: (identifier) @name
+  body: (class_body) @hide) @show_if_ref
 
 ; Class methods (public, identified by property_identifier name)
 (method_definition

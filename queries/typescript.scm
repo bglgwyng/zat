@@ -10,7 +10,32 @@
   declaration: (class_declaration
     body: (class_body) @hide)) @show
 
-; Exported variable/const
+; Exported variable/const (typed, hide = value)
+(export_statement
+  "export" @strip
+  declaration: (lexical_declaration
+    (variable_declarator
+      type: (type_annotation)
+      "=" @hide
+      value: (_) @hide))) @show
+
+; Exported variable/const (arrow function, hide body)
+(export_statement
+  "export" @strip
+  declaration: (lexical_declaration
+    (variable_declarator
+      value: (arrow_function
+        body: (statement_block) @hide)))) @show
+
+; Exported variable/const (function expression, hide body)
+(export_statement
+  "export" @strip
+  declaration: (lexical_declaration
+    (variable_declarator
+      value: (function_expression
+        body: (statement_block) @hide)))) @show
+
+; Exported variable/const (fallback)
 (export_statement
   "export" @strip
   declaration: (lexical_declaration)) @show
@@ -50,19 +75,23 @@
     name: (identifier) @name)) @show_if_ref
 
 (function_declaration
-  name: (identifier) @name) @show_if_ref
+  name: (identifier) @name
+  body: (statement_block) @hide) @show_if_ref
 
 (class_declaration
-  name: (type_identifier) @name) @show_if_ref
+  name: (type_identifier) @name
+  body: (class_body) @hide) @show_if_ref
 
 (interface_declaration
-  name: (type_identifier) @name) @show_if_ref
+  name: (type_identifier) @name
+  body: (interface_body) @hide) @show_if_ref
 
 (type_alias_declaration
   name: (type_identifier) @name) @show_if_ref
 
 (enum_declaration
-  name: (identifier) @name) @show_if_ref
+  name: (identifier) @name
+  body: (enum_body) @hide) @show_if_ref
 
 ; Class methods (exclude private, strip "public")
 ((method_definition

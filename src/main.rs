@@ -112,20 +112,6 @@ fn last_line_of(source: &str, node: &Node) -> String {
     text.lines().last().unwrap_or("").trim().to_string()
 }
 
-fn trim_body_with<'a>(line: &'a str, body_first_line: Option<&str>) -> &'a str {
-    match body_first_line {
-        Some(body_fl) => {
-            let trimmed = line.trim_end();
-            if let Some(pos) = trimmed.rfind(body_fl) {
-                trimmed[..pos].trim_end()
-            } else {
-                trimmed
-            }
-        }
-        None => line.trim_end(),
-    }
-}
-
 fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<OutlineEntry> {
     let mut parser = Parser::new();
     parser.set_language(&language).expect("Failed to set language");
@@ -155,14 +141,21 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
 
     while let Some(m) = matches.next() {
         let mut match_show_key: Option<usize> = None;
-        let mut match_body: Option<(String, String)> = None;
+        let mut match_hide_range: Option<(usize, usize)> = None;
         let mut appended = false;
         for cap in m.captures {
             let capture_name: &str = &query.capture_names()[cap.index as usize];
             let node = cap.node;
 
             if capture_name == "hide" {
-                match_body = Some((first_line_of(source, &node), last_line_of(source, &node)));
+                let start = node.start_byte();
+                let end = node.end_byte();
+                match match_hide_range {
+                    None => match_hide_range = Some((start, end)),
+                    Some((prev_start, prev_end)) => {
+                        match_hide_range = Some((prev_start.min(start), prev_end.max(end)));
+                    }
+                }
                 continue;
             }
 
@@ -206,11 +199,21 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
             }
         }
 
-        // Apply @hide to the show node from this match
-        if let (Some(key), Some((hide_fl, hide_ll))) = (match_show_key, match_body) {
+        // Apply @hide to the show node from this match (first @hide wins)
+        if let (Some(key), Some((hide_start, hide_end))) = (match_show_key, match_hide_range) {
             if let Some(node) = show_nodes.get_mut(&key) {
-                node.hide_first_line = Some(hide_fl);
-                node.hide_last_line = Some(hide_ll);
+                if node.hide_first_line.is_none() {
+                    let hide_text = &source[hide_start..hide_end];
+                    node.hide_first_line = Some(
+                        hide_text.lines().next().unwrap_or("").trim().to_string()
+                    );
+                    // Only set closing line for multi-line bodies
+                    if hide_text.contains('\n') {
+                        node.hide_last_line = Some(
+                            hide_text.lines().last().unwrap_or("").trim().to_string()
+                        );
+                    }
+                }
             }
         }
     }
@@ -241,6 +244,16 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
             if node.name.as_deref() == Some(ref_text.as_str()) {
                 node.referenced = true;
                 break;
+            }
+        }
+    }
+
+    // Apply @hide: remove hidden text from first_line (before @strip so text matches)
+    for node in show_nodes.values_mut() {
+        if let Some(ref hide_fl) = node.hide_first_line {
+            let trimmed = node.first_line.trim_end();
+            if let Some(pos) = trimmed.rfind(hide_fl.as_str()) {
+                node.first_line = trimmed[..pos].trim_end().to_string();
             }
         }
     }
@@ -314,8 +327,8 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
         let has_indent_children = children.iter().any(|c| c.indent);
 
         if !has_indent_children {
-            // Simple node, just show first line (hide body if @hide present)
-            let text = trim_body_with(&node.first_line, node.hide_first_line.as_deref()).to_string();
+            // Simple node, just show first line (@hide already applied)
+            let text = node.first_line.trim_end().to_string();
             entries.push(OutlineEntry {
                 text,
                 start_line: node.start_line,
@@ -346,7 +359,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                     continue;
                 }
 
-                let child_text = trim_body_with(&child.first_line, child.hide_first_line.as_deref());
+                let child_text = child.first_line.trim_end();
                 let formatted = if child.noindent {
                     child_text.to_string()
                 } else {
