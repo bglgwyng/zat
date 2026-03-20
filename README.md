@@ -42,7 +42,7 @@ struct ImportEntry { // L14-L18
 fn extract_outline(source: & str, path: & str) -> OutlineResult // L33-L196
 ```
 
-Only public/exported symbols are shown. Visibility modifiers and other boilerplate may be omitted for brevity. Struct fields and interface members are included.
+Only public/exported symbols are shown. Visibility modifiers (`pub`, `export`) are stripped for brevity. Struct fields, enum variants, and interface members are included.
 
 ### Directory outline
 
@@ -60,42 +60,28 @@ lib.rs:
 main.rs:
 ```
 
-Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows their outlines. `"."` in `directoryIndex` controls where `ls` output appears.
+Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows their outlines. Also lists directory contents.
 
 ## Supported Languages
 
-| Language | Viewer | Parser |
-|----------|--------|--------|
-| JS/TS/JSX/TSX | [zat-js-viewer](https://github.com/bglgwyng/zat-js-viewer) | oxc |
-| Rust | [zat-rust-viewer](https://github.com/bglgwyng/zat-rust-viewer) | syn |
-| Python | [zat-python-viewer](https://github.com/bglgwyng/zat-python-viewer) | rustpython-parser |
-| Other | built-in fallback | `cat -n` |
+| Language | Extensions |
+|----------|-----------|
+| JavaScript | `.js`, `.jsx`, `.cjs`, `.mjs` |
+| TypeScript | `.ts`, `.tsx`, `.mts`, `.cts` |
+| Rust | `.rs` |
+| Python | `.py` |
+| Go | `.go` |
+| Java | `.java` |
+| C | `.c`, `.h` |
+| C++ | `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hxx` |
+| C# | `.cs` |
+| Swift | `.swift` |
+| Kotlin | `.kt`, `.kts` |
+| Haskell | `.hs` |
+| Ruby | `.rb` |
+| Other | Falls back to `cat -n` |
 
-## Nix Customization
-
-### NixOS / nix-darwin Module
-
-```nix
-# flake.nix inputs
-inputs.zat.url = "github:bglgwyng/zat";
-
-# configuration.nix
-{ inputs, ... }:
-{
-  imports = [ inputs.zat.nixosModules.default ]; # or darwinModules.default
-
-  programs.zat = {
-    enable = true;
-    rules = [
-      {
-        patterns = [ "*.ts" "*.tsx" ];
-        handler = "${inputs.zat-js-viewer.packages.${system}.default}/bin/zat-js-viewer --lang ts";
-      }
-    ];
-    directoryIndex = [ "index.ts" "lib.rs" "." ];
-  };
-}
-```
+All languages are parsed with [tree-sitter](https://tree-sitter.github.io/).
 
 ## For AI Agents
 
@@ -114,7 +100,7 @@ A code outline viewer that shows exported symbol signatures with line numbers.
 
 Use `zat` first to get an outline, then `Read(offset, limit)` to read only the relevant sections.
 
-- `zat <file>` — Show outline (JS/TS, Rust, Python supported; falls back to `cat -n` for other types)
+- `zat <file>` — Show outline (13 languages supported; falls back to `cat -n` for other types)
 - `zat <dir>` — Show entry file outlines (index.ts, lib.rs, etc.) and directory listing
 - Use the line numbers (e.g. `L10-L25`) to `Read(offset, limit)` into specific ranges
 - Pipe through `head` to limit output: `zat <file> | head -n 50`
