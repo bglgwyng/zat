@@ -66,9 +66,6 @@
             };
           };
           packages.default = evalZat.package;
-          packages.tarball = pkgs.runCommand "zat-${system}.tar.gz" { } ''
-            tar -czvf $out -C ${self'.packages.default}/bin .
-          '';
           formatter = pkgs.nixfmt-rfc-style;
         };
     };

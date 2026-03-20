@@ -10,28 +10,53 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            system: x86_64-linux
-          - os: macos-latest
-            system: aarch64-darwin
-          - os: macos-15
-            system: x86_64-darwin
-    runs-on: ${{ matrix.os }}
+          - system: x86_64-linux
+          - system: aarch64-darwin
+          - system: x86_64-darwin
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Download viewer binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p libexec/zat
+          viewers=("zat-js-viewer" "zat-rust-viewer" "zat-python-viewer")
+          for viewer in "${viewers[@]}"; do
+            rev=$(jq -r ".nodes.\"$viewer\".locked.rev" flake.lock)
+            owner=$(jq -r ".nodes.\"$viewer\".locked.owner" flake.lock)
+            repo=$(jq -r ".nodes.\"$viewer\".locked.repo" flake.lock)
+            tag=$(gh api "repos/$owner/$repo/git/matching-refs/tags/" --jq \
+              ".[] | select(.object.sha == \"$rev\" or .object.sha == null) | .ref" | head -1)
+            if [ -z "$tag" ]; then
+              # Check if any tag points to this commit via annotated tag objects
+              tag=$(gh api "repos/$owner/$repo/tags" --jq \
+                ".[] | select(.commit.sha == \"$rev\") | \"refs/tags/\" + .name" | head -1)
+            fi
+            if [ -z "$tag" ]; then
+              echo "ERROR: No release tag found for $viewer at commit $rev"
+              exit 1
+            fi
+            tag_name="${tag#refs/tags/}"
+            echo "Using $viewer $tag_name (commit $rev)"
+            gh release download "$tag_name" --repo "$owner/$repo" \
+              --pattern "${viewer}-${{ matrix.system }}.tar.gz" --dir /tmp
+            tar -xzf "/tmp/${viewer}-${{ matrix.system }}.tar.gz" -C libexec/zat
+          done
 
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-
-      - name: Build tarball
-        run: nix build .#packages.${{ matrix.system }}.tarball
+      - name: Package tarball
+        run: |
+          mkdir -p pkg/bin pkg/libexec
+          install -m 755 bin/zat.sh pkg/bin/zat
+          cp -r libexec/zat pkg/libexec/zat
+          tar -czvf "zat-${{ matrix.system }}.tar.gz" -C pkg .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: zat-${{ matrix.system }}
-          path: result
+          path: "*.tar.gz"
 
   release:
     needs: build
@@ -39,8 +64,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -49,9 +72,8 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release
-          for dir in artifacts/zat-*/; do
-            system=$(basename "$dir" | sed 's/zat-//')
-            cp "$dir"/* "release/zat-${system}.tar.gz"
+          for dir in artifacts/*/; do
+            cp "$dir"*.tar.gz release/
           done
 
       - name: Create Release
@@ -90,9 +112,9 @@ jobs:
       - name: Generate Homebrew formula
         run: |
           mkdir -p Formula
-          cat > Formula/zat.rb << EOF
+          cat > Formula/zat.rb << 'FORMULA'
           class Zat < Formula
-            desc "zatto files and directories"
+            desc "Code outline viewer for LLMs"
             homepage "https://github.com/${{ github.repository }}"
             version "${{ steps.version.outputs.version }}"
             license "MIT"
@@ -116,14 +138,16 @@ jobs:
             end
 
             def install
-              bin.install "zat"
+              bin.install "bin/zat"
+              libexec.install Dir["libexec/zat"]
             end
 
             test do
-              system "#{bin}/zat", "--help"
+              (testpath/"test.ts").write("export function hello(): string { return 'hi'; }\n")
+              assert_match "function hello", shell_output("#{bin}/zat #{testpath}/test.ts")
             end
           end
-          EOF
+          FORMULA
 
       - name: Push to Homebrew tap
         uses: cpina/github-action-push-to-another-repository@main
