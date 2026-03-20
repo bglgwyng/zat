@@ -1,4 +1,4 @@
 {
   "label_kinds": ["access_specifier"],
-  "uses_braces": true
+  "body_delimiters": ["{", "}"]
 }

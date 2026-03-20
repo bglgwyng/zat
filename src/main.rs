@@ -6,7 +6,7 @@ use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
 #[derive(serde::Deserialize)]
 struct LangConfig {
     label_kinds: Vec<String>,
-    uses_braces: bool,
+    body_delimiters: Option<(String, String)>,
 }
 
 fn main() {
@@ -195,8 +195,8 @@ fn extract_outline(source: &str, language: Language, query_src: &str, config: &L
             continue;
         }
         if !data.members.is_empty() {
-            let header = if config.uses_braces {
-                format!("{} {{", data.sig_text)
+            let header = if let Some((open, _)) = &config.body_delimiters {
+                format!("{} {}", data.sig_text, open)
             } else {
                 data.sig_text.clone()
             };
@@ -217,9 +217,9 @@ fn extract_outline(source: &str, language: Language, query_src: &str, config: &L
                     end_line: member.end_line,
                 });
             }
-            if config.uses_braces {
+            if let Some((_, close)) = &config.body_delimiters {
                 entries.push(OutlineEntry {
-                    signature: "}".to_string(),
+                    signature: close.clone(),
                     start_line: 0,
                     end_line: 0,
                 });

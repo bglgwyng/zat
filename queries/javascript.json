@@ -1,4 +1,4 @@
 {
   "label_kinds": [],
-  "uses_braces": true
+  "body_delimiters": ["{", "}"]
 }
