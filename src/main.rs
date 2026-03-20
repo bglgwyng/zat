@@ -125,8 +125,12 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
     let mut show_nodes: BTreeMap<usize, ShowNode> = BTreeMap::new();
     // Collect @_strip captures: (parent_start_byte, strip_text)
     let mut strip_texts: Vec<(usize, usize, String)> = Vec::new();
+    let mut append_texts: Vec<(Option<usize>, String)> = Vec::new();
 
     while let Some(m) = matches.next() {
+        // First pass: collect show nodes from this match
+        let mut match_show_key: Option<usize> = None;
+        let mut appended = false;
         for cap in m.captures {
             let capture_name: &str = &query.capture_names()[cap.index as usize];
             let node = cap.node;
@@ -134,6 +138,15 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
             if capture_name == "strip" {
                 let text = source[node.byte_range()].trim().to_string();
                 strip_texts.push((node.start_byte(), node.end_byte(), text));
+                continue;
+            }
+
+            if capture_name == "append" {
+                if !appended {
+                    let text = source[node.byte_range()].trim().to_string();
+                    append_texts.push((match_show_key, text));
+                    appended = true;
+                }
                 continue;
             }
 
@@ -145,6 +158,7 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 parsed.end_line = node.end_position().row + 1;
                 parsed.first_line = first_line_of(source, &node);
                 parsed.last_line = last_line_of(source, &node);
+                match_show_key = Some(start_byte);
                 // Don't overwrite if already captured (first match wins)
                 show_nodes.entry(start_byte).or_insert(parsed);
             }
@@ -169,6 +183,15 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 node.first_line = node.first_line
                     .replace(&format!("{} ", strip_text), "")
                     .replace(strip_text.as_str(), "");
+            }
+        }
+    }
+
+    // Apply @append: append text to the show node from the same match
+    for (key, append_text) in &append_texts {
+        if let Some(key) = key {
+            if let Some(node) = show_nodes.get_mut(key) {
+                node.first_line.push_str(append_text);
             }
         }
     }

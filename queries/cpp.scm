@@ -21,12 +21,15 @@
   (declaration) @show.indent)
 
 ; Public/protected access specifier: show label and enable members after
-((access_specifier) @show.indent.noindent.noloc.show_after
-  (#match? @show.indent.noindent.noloc.show_after "^(public|protected)$"))
+(field_declaration_list
+  ((access_specifier) @show.indent.noindent.noloc.show_after
+    (#match? @show.indent.noindent.noloc.show_after "^(public|protected)$"))
+  . ":" @append)
 
 ; Private: hide members after
-((access_specifier) @hide_after
-  (#match? @hide_after "^private$"))
+(field_declaration_list
+  ((access_specifier) @hide_after
+    (#match? @hide_after "^private$")))
 
 ; Enum
 (enum_specifier
