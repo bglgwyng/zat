@@ -61,17 +61,21 @@ struct ShowNode {
     noloc: bool,
     show_after: bool,
     hide_after: bool,
+    show_if_ref: bool,
+    referenced: bool,
+    name: Option<String>,
 }
 
 fn parse_capture(name: &str) -> Option<ShowNode> {
     let parts: std::collections::HashSet<&str> = name.split('.').collect();
 
-    // Must have "show" or "hide_after" as base
+    // Must have "show", "show_if_ref", or "hide_after" as base
     let is_show = parts.contains("show");
+    let is_show_if_ref = parts.contains("show_if_ref");
     let is_hide_after = parts.contains("hide_after");
     let is_show_after = parts.contains("show_after");
 
-    if !is_show && !is_hide_after {
+    if !is_show && !is_show_if_ref && !is_hide_after {
         return None;
     }
 
@@ -87,6 +91,9 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
         noloc: parts.contains("noloc"),
         show_after: is_show_after,
         hide_after: is_hide_after,
+        show_if_ref: is_show_if_ref,
+        referenced: false,
+        name: None,
     })
 }
 
@@ -121,14 +128,14 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
     let mut cursor = QueryCursor::new();
     let mut matches = cursor.matches(&query, tree.root_node(), source.as_bytes());
 
-    // Collect all @show and @show.indent nodes
+    // Collect all @show, @show_if_ref, and @hide_after nodes
     let mut show_nodes: BTreeMap<usize, ShowNode> = BTreeMap::new();
-    // Collect @_strip captures: (parent_start_byte, strip_text)
     let mut strip_texts: Vec<(usize, usize, String)> = Vec::new();
     let mut append_texts: Vec<(Option<usize>, String)> = Vec::new();
+    let mut name_captures: Vec<(usize, usize, String)> = Vec::new();
+    let mut ref_texts: Vec<String> = Vec::new();
 
     while let Some(m) = matches.next() {
-        // First pass: collect show nodes from this match
         let mut match_show_key: Option<usize> = None;
         let mut appended = false;
         for cap in m.captures {
@@ -150,6 +157,18 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 continue;
             }
 
+            if capture_name == "name" {
+                let text = source[node.byte_range()].trim().to_string();
+                name_captures.push((node.start_byte(), node.end_byte(), text));
+                continue;
+            }
+
+            if capture_name == "ref" {
+                let text = source[node.byte_range()].trim().to_string();
+                ref_texts.push(text);
+                continue;
+            }
+
             if let Some(mut parsed) = parse_capture(capture_name) {
                 let start_byte = node.start_byte();
                 parsed.start_byte = start_byte;
@@ -159,8 +178,37 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 parsed.first_line = first_line_of(source, &node);
                 parsed.last_line = last_line_of(source, &node);
                 match_show_key = Some(start_byte);
-                // Don't overwrite if already captured (first match wins)
                 show_nodes.entry(start_byte).or_insert(parsed);
+            }
+        }
+    }
+
+    // Apply @name: assign name to the smallest containing show node
+    for (name_start, name_end, name_text) in &name_captures {
+        let mut best: Option<usize> = None;
+        let mut best_size = usize::MAX;
+        for (&key, node) in show_nodes.iter() {
+            if *name_start >= node.start_byte && *name_end <= node.end_byte {
+                let size = node.end_byte - node.start_byte;
+                if size < best_size {
+                    best = Some(key);
+                    best_size = size;
+                }
+            }
+        }
+        if let Some(key) = best {
+            if let Some(node) = show_nodes.get_mut(&key) {
+                node.name = Some(name_text.clone());
+            }
+        }
+    }
+
+    // Apply @ref: mark matching nodes as referenced
+    for ref_text in &ref_texts {
+        for node in show_nodes.values_mut() {
+            if node.name.as_deref() == Some(ref_text.as_str()) {
+                node.referenced = true;
+                break;
             }
         }
     }
@@ -204,6 +252,11 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
     for node in show_vec.iter() {
         // Skip indent/hide_after nodes (they're handled by their parent @show)
         if node.indent || node.hide_after {
+            continue;
+        }
+
+        // Skip show_if_ref nodes that were not referenced
+        if node.show_if_ref && !node.referenced {
             continue;
         }
 
