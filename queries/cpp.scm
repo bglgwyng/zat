@@ -1,41 +1,46 @@
 ; Function definitions
-(function_definition) @signature
+(function_definition) @show
 
 ; Function declarations
 (declaration
-  declarator: (function_declarator)) @signature
+  declarator: (function_declarator)) @show
 
-; Class with body
+; Class
 (class_specifier
-  name: (_)
-  body: (field_declaration_list) @body) @signature
+  name: (_)) @show
 
-; Access specifiers inside class/struct bodies
-(field_declaration_list
-  (access_specifier) @label)
-
-; Struct with fields
+; Struct
 (struct_specifier
-  name: (_)
-  body: (field_declaration_list) @body) @signature
+  name: (_)) @show
 
-; Enum with values
+; Fields and methods inside class/struct
+(field_declaration) @show.indent
+
+; Declarations inside class/struct (constructors, etc.)
+(field_declaration_list
+  (declaration) @show.indent)
+
+; Access specifiers
+(access_specifier) @show.indent
+
+; Enum
 (enum_specifier
-  name: (_)
-  body: (enumerator_list) @body) @signature
+  name: (_)) @show
+
+; Enum values
+(enumerator) @show.indent
 
 ; Namespace
 (namespace_definition
-  name: (_)) @signature
+  name: (_)) @show
 
-; Typedef struct with fields
-(type_definition
-  type: (struct_specifier
-    body: (field_declaration_list) @body)
-  declarator: (type_identifier) @name) @signature
+; Declarations inside namespace
+(namespace_definition
+  body: (declaration_list
+    (_) @show.indent))
 
 ; Typedef
-(type_definition) @signature
+(type_definition) @show
 
 ; Template declaration
-(template_declaration) @signature
+(template_declaration) @show

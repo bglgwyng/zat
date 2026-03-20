@@ -1,33 +1,41 @@
 ; Exported function
 (export_statement
-  declaration: (function_declaration)) @signature
+  declaration: (function_declaration)) @show
 
-; Exported class with body
+; Exported class
 (export_statement
-  declaration: (class_declaration
-    body: (class_body) @body)) @signature
+  declaration: (class_declaration)) @show
 
 ; Exported variable/const
 (export_statement
-  declaration: (lexical_declaration)) @signature
+  declaration: (lexical_declaration)) @show
 
-; Exported interface with body
+; Exported interface
 (export_statement
-  declaration: (interface_declaration
-    body: (interface_body) @body)) @signature
+  declaration: (interface_declaration)) @show
 
 ; Exported type alias
 (export_statement
-  declaration: (type_alias_declaration)) @signature
+  declaration: (type_alias_declaration)) @show
 
-; Exported enum with body
+; Exported enum
 (export_statement
-  declaration: (enum_declaration
-    body: (enum_body) @body)) @signature
+  declaration: (enum_declaration)) @show
 
 ; Export default
 (export_statement
-  (function_declaration)) @signature
+  (function_declaration)) @show
 
 ; Named exports
-(export_statement) @signature
+(export_statement) @show
+
+; Class methods and fields
+(method_definition) @show.indent
+(public_field_definition) @show.indent
+
+; Interface members
+(property_signature) @show.indent
+(method_signature) @show.indent
+
+; Enum members
+(enum_assignment) @show.indent

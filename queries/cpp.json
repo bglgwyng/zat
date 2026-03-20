@@ -1,4 +1,0 @@
-{
-  "label_kinds": ["access_specifier"],
-  "body_delimiters": ["{", "}"]
-}

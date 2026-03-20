@@ -1,36 +1,44 @@
-; Public function
-(function_item) @signature
+; Function
+(function_item) @show
 
-; Struct with fields
-(struct_item
-  body: (field_declaration_list) @body) @signature
+; Struct
+(struct_item) @show
 
-; Struct (unit/tuple)
-(struct_item) @signature
+; Struct fields
+(field_declaration) @show.indent
 
-; Enum with variants
-(enum_item
-  body: (enum_variant_list) @body) @signature
+; Enum
+(enum_item) @show
 
-; Trait with body
-(trait_item
-  body: (declaration_list) @body) @signature
+; Enum variants
+(enum_variant) @show.indent
 
-; Impl block with body
+; Trait
+(trait_item) @show
+
+; Trait method signatures
+(declaration_list
+  (function_signature_item) @show.indent)
+
+; Impl block
+(impl_item) @show
+
+; Impl methods
 (impl_item
-  body: (declaration_list) @body) @signature
+  body: (declaration_list
+    (function_item) @show.indent))
 
 ; Type alias
-(type_item) @signature
+(type_item) @show
 
 ; Const
-(const_item) @signature
+(const_item) @show
 
 ; Static
-(static_item) @signature
+(static_item) @show
 
 ; Mod
-(mod_item) @signature
+(mod_item) @show
 
-; Use (pub)
-(use_declaration) @signature
+; Use
+(use_declaration) @show

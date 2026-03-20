@@ -1,14 +1,20 @@
-; Top-level class with body
-(program
-  (class_declaration
-    body: (class_body) @body) @signature)
+; Class
+(class_declaration) @show
 
-; Top-level interface with body
-(program
-  (interface_declaration
-    body: (interface_body) @body) @signature)
+; Interface
+(interface_declaration) @show
 
-; Top-level enum with body
-(program
-  (enum_declaration
-    body: (enum_body) @body) @signature)
+; Enum
+(enum_declaration) @show
+
+; Methods
+(method_declaration) @show.indent
+
+; Constructors
+(constructor_declaration) @show.indent
+
+; Fields
+(field_declaration) @show.indent
+
+; Enum constants
+(enum_constant) @show.indent
