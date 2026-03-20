@@ -8,6 +8,12 @@ The name comes from Japanese ざっと (*zatto*), meaning "roughly" or "at a gla
 
 ## Installation
 
+### Homebrew
+
+```shell
+brew install bglgwyng/tap/zat
+```
+
 ### Nix
 
 ```shell
