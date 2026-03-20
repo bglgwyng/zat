@@ -131,7 +131,11 @@
   ((accessibility_modifier) @strip
     (#eq? @strip "public")))
 
-; Class fields (exclude private, strip "public")
+; Class fields (exclude private, strip "public", hide initializer)
+((public_field_definition
+    "=" @hide
+    value: (_) @hide) @show.indented
+  (#not-match? @show.indented "^private"))
 ((public_field_definition) @show.indented
   (#not-match? @show.indented "^private"))
 (public_field_definition
