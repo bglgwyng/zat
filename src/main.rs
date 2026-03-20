@@ -12,6 +12,10 @@ fn main() {
         "go" => (tree_sitter_go::LANGUAGE.into(), include_str!("../queries/go.scm")),
         "c" => (tree_sitter_c::LANGUAGE.into(), include_str!("../queries/c.scm")),
         "cpp" | "cc" | "cxx" => (tree_sitter_cpp::LANGUAGE.into(), include_str!("../queries/cpp.scm")),
+        "js" | "jsx" => (tree_sitter_javascript::LANGUAGE.into(), include_str!("../queries/javascript.scm")),
+        "ts" | "tsx" => (tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(), include_str!("../queries/typescript.scm")),
+        "python" | "py" => (tree_sitter_python::LANGUAGE.into(), include_str!("../queries/python.scm")),
+        "rust" | "rs" => (tree_sitter_rust::LANGUAGE.into(), include_str!("../queries/rust.scm")),
         "java" => (tree_sitter_java::LANGUAGE.into(), include_str!("../queries/java.scm")),
         other => {
             eprintln!("Unsupported language: {}", other);
@@ -53,16 +57,23 @@ struct MatchData {
 struct Member {
     text: String,
     no_indent: bool,
+    start_line: usize,
+    end_line: usize,
 }
 
 fn format_member(source: &str, node: &Node) -> Member {
     let text = &source[node.byte_range()];
     let first_line = text.lines().next().unwrap_or(text).trim();
 
+    let start_line = node.start_position().row + 1;
+    let end_line = node.end_position().row + 1;
+
     if node.kind() == "access_specifier" {
         return Member {
             text: format!("{}:", first_line),
             no_indent: true,
+            start_line: 0,
+            end_line: 0,
         };
     }
 
@@ -74,6 +85,8 @@ fn format_member(source: &str, node: &Node) -> Member {
     Member {
         text: sig.to_string(),
         no_indent: false,
+        start_line,
+        end_line,
     }
 }
 
@@ -172,8 +185,14 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
             continue;
         }
         if !data.members.is_empty() {
+            let uses_braces = !data.sig_text.ends_with(':');
+            let header = if uses_braces {
+                format!("{} {{", data.sig_text)
+            } else {
+                data.sig_text.clone()
+            };
             entries.push(OutlineEntry {
-                signature: format!("{} {{", data.sig_text),
+                signature: header,
                 start_line: data.start_line,
                 end_line: data.end_line,
             });
@@ -185,15 +204,17 @@ fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<Out
                 };
                 entries.push(OutlineEntry {
                     signature: sig,
+                    start_line: member.start_line,
+                    end_line: member.end_line,
+                });
+            }
+            if uses_braces {
+                entries.push(OutlineEntry {
+                    signature: "}".to_string(),
                     start_line: 0,
                     end_line: 0,
                 });
             }
-            entries.push(OutlineEntry {
-                signature: "}".to_string(),
-                start_line: 0,
-                end_line: 0,
-            });
         } else {
             entries.push(OutlineEntry {
                 signature: data.sig_text.clone(),
