@@ -19,6 +19,11 @@ fn main() {
         "python" | "py" => (tree_sitter_python::LANGUAGE.into(), include_str!("../queries/python.scm")),
         "rust" | "rs" => (tree_sitter_rust::LANGUAGE.into(), include_str!("../queries/rust.scm")),
         "java" => (tree_sitter_java::LANGUAGE.into(), include_str!("../queries/java.scm")),
+        "haskell" | "hs" => (tree_sitter_haskell::LANGUAGE.into(), include_str!("../queries/haskell.scm")),
+        "swift" => (tree_sitter_swift::LANGUAGE.into(), include_str!("../queries/swift.scm")),
+        "kotlin" | "kt" => (tree_sitter_kotlin_ng::LANGUAGE.into(), include_str!("../queries/kotlin.scm")),
+        "csharp" | "cs" => (tree_sitter_c_sharp::LANGUAGE.into(), include_str!("../queries/csharp.scm")),
+        "ruby" | "rb" => (tree_sitter_ruby::LANGUAGE.into(), include_str!("../queries/ruby.scm")),
         other => {
             eprintln!("Unsupported language: {}", other);
             std::process::exit(1);
