@@ -1,0 +1,75 @@
+; Class
+(class_declaration
+  body: (declaration_list) @hide) @show
+
+; Interface
+(interface_declaration
+  body: (declaration_list) @hide) @show
+
+; Struct
+(struct_declaration
+  body: (declaration_list) @hide) @show
+
+; Enum
+(enum_declaration
+  body: (enum_member_declaration_list) @hide) @show
+
+; Record (with optional body)
+(record_declaration
+  body: (declaration_list) @hide) @show
+(record_declaration) @show
+
+; Strip visibility/other modifiers from type declarations
+(class_declaration
+  ((modifier) @strip
+    (#match? @strip "^(public|internal|private|protected|static|abstract|sealed|partial)$")))
+(interface_declaration
+  ((modifier) @strip
+    (#match? @strip "^(public|internal|private|protected|partial)$")))
+(struct_declaration
+  ((modifier) @strip
+    (#match? @strip "^(public|internal|private|protected|static|partial)$")))
+(enum_declaration
+  ((modifier) @strip
+    (#match? @strip "^(public|internal|private|protected)$")))
+(record_declaration
+  ((modifier) @strip
+    (#match? @strip "^(public|internal|private|protected|partial)$")))
+
+; Methods (exclude private, strip "public")
+((method_declaration
+  body: (block) @hide) @show.indented
+  (#not-match? @show.indented "^private"))
+((method_declaration) @show.indented
+  (#not-match? @show.indented "^private"))
+(method_declaration
+  ((modifier) @strip
+    (#eq? @strip "public")))
+
+; Constructors (exclude private, strip "public")
+((constructor_declaration
+  body: (block) @hide) @show.indented
+  (#not-match? @show.indented "^private"))
+(constructor_declaration
+  ((modifier) @strip
+    (#eq? @strip "public")))
+
+; Properties (exclude private, strip "public", hide accessor bodies)
+((property_declaration
+  accessors: (accessor_list) @hide) @show.indented
+  (#not-match? @show.indented "^private"))
+((property_declaration) @show.indented
+  (#not-match? @show.indented "^private"))
+(property_declaration
+  ((modifier) @strip
+    (#eq? @strip "public")))
+
+; Fields (exclude private, strip "public")
+((field_declaration) @show.indented.noloc
+  (#not-match? @show.indented.noloc "^private"))
+(field_declaration
+  ((modifier) @strip
+    (#eq? @strip "public")))
+
+; Enum members
+(enum_member_declaration) @show.indented.noloc
