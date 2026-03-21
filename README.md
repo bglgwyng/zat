@@ -66,7 +66,6 @@ lib.rs:
 
 .:
   lib.rs
-  main.rs
   utils.rs
 ```
 
