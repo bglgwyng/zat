@@ -26,6 +26,12 @@ Or run directly:
 nix run github:bglgwyng/zat -- <FILE>
 ```
 
+### Cargo
+
+```shell
+cargo install --git https://github.com/bglgwyng/zat
+```
+
 ## Usage
 
 ### File outline
