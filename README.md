@@ -63,10 +63,14 @@ lib.rs:
     debug: bool
   }
   fn load(path: & str) -> Config // L12-L30
-main.rs:
+
+.:
+  lib.rs
+  main.rs
+  utils.rs
 ```
 
-Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows their outlines. Also lists directory contents.
+Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows their outlines, followed by a directory listing under `.:`.
 
 ## Supported Languages
 
