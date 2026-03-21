@@ -17,6 +17,11 @@
   (visibility_modifier) @strip
   body: (enum_variant_list) @hide) @show
 
+; Struct fields (pub)
+(field_declaration_list
+  (field_declaration
+    (visibility_modifier) @strip) @show.indented.noloc)
+
 ; Enum variants
 (enum_variant) @show.indented.noloc
 
