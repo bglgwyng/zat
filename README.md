@@ -32,6 +32,10 @@ nix run github:bglgwyng/zat -- <FILE>
 cargo install --git https://github.com/bglgwyng/zat
 ```
 
+### Pre-built binaries
+
+Download from [GitHub Releases](https://github.com/bglgwyng/zat/releases). Available for macOS (aarch64, x86_64) and Linux (x86_64).
+
 ## Usage
 
 ### File outline
