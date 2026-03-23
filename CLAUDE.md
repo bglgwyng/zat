@@ -22,7 +22,9 @@ Tag with `v*` triggers `.github/workflows/release.yml` which:
 
 ## Architecture
 
-- **`src/main.rs`**: Single entry point. Handles file vs directory dispatch, extension→language mapping, outline extraction, and `cat -n` fallback. All tree-sitter queries are `include_str!`'d at compile time.
+- **`src/main.rs`**: Entry point. Handles file vs directory dispatch, extension→language mapping, and `cat -n` fallback. All tree-sitter queries are `include_str!`'d at compile time.
+
+- **`src/outline.rs`**: Core outline extraction engine. Takes source code, a tree-sitter `Language`, and a query string; returns `Vec<OutlineEntry>`. Processes tree-sitter captures (`@show`, `@hide`, `@strip`, etc.) to produce the outline.
 
 - **`queries/*.scm`**: Tree-sitter query files per language. These define what appears in outlines using a capture-based system:
   - `@show` — top-level symbol to display
