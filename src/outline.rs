@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use streaming_iterator::StreamingIterator;
-use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
+use tree_sitter::{Language, Parser, Query, QueryCursor};
 
 pub struct OutlineEntry {
     pub text: String,
@@ -14,7 +14,8 @@ struct ShowNode {
     end_byte: usize,
     start_line: usize,
     end_line: usize,
-    first_line: String,
+    text: String,
+    hide_ranges: Vec<(usize, usize)>, // absolute byte ranges to remove
     indented: bool,
     indent: bool,
     noloc: bool,
@@ -23,8 +24,6 @@ struct ShowNode {
     show_if_ref: bool,
     referenced: bool,
     name: Option<String>,
-    hide_first_line: Option<String>,
-    hide_last_line: Option<String>,
 }
 
 fn parse_capture(name: &str) -> Option<ShowNode> {
@@ -45,7 +44,8 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
         end_byte: 0,
         start_line: 0,
         end_line: 0,
-        first_line: String::new(),
+        text: String::new(),
+        hide_ranges: Vec::new(),
         indented: parts.contains("indented"),
         indent: parts.contains("indent"),
         noloc: parts.contains("noloc"),
@@ -54,15 +54,7 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
         show_if_ref: is_show_if_ref,
         referenced: false,
         name: None,
-        hide_first_line: None,
-        hide_last_line: None,
     })
-}
-
-fn first_line_of(source: &str, node: &Node) -> String {
-    let text = &source[node.byte_range()];
-    let line = text.lines().next().unwrap_or(text).trim();
-    line.to_string()
 }
 
 fn find_smallest_containing(show_nodes: &BTreeMap<usize, ShowNode>, start: usize, end: usize) -> Option<usize> {
@@ -102,7 +94,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
 
     // Collect all @show, @show_if_ref, and @hide_after nodes
     let mut show_nodes: BTreeMap<usize, ShowNode> = BTreeMap::new();
-    let mut strip_texts: Vec<(usize, usize, String)> = Vec::new();
+    let mut strip_ranges: Vec<(usize, usize)> = Vec::new();
     let mut append_texts: Vec<(Option<usize>, String)> = Vec::new();
     let mut name_captures: Vec<(usize, usize, String)> = Vec::new();
     let mut ref_texts: Vec<String> = Vec::new();
@@ -128,8 +120,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             }
 
             if capture_name == "strip" {
-                let text = source[node.byte_range()].trim().to_string();
-                strip_texts.push((node.start_byte(), node.end_byte(), text));
+                strip_ranges.push((node.start_byte(), node.end_byte()));
                 continue;
             }
 
@@ -160,27 +151,16 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
                 parsed.end_byte = node.end_byte();
                 parsed.start_line = node.start_position().row + 1;
                 parsed.end_line = node.end_position().row + 1;
-                parsed.first_line = first_line_of(source, &node);
+                parsed.text = source[node.byte_range()].to_string();
                 match_show_key = Some(start_byte);
                 show_nodes.entry(start_byte).or_insert(parsed);
             }
         }
 
-        // Apply @hide to the show node from this match (first @hide wins)
-        if let (Some(key), Some((hide_start, hide_end))) = (match_show_key, match_hide_range) {
+        // Store @hide range on the show node from this match
+        if let (Some(key), Some(hide_range)) = (match_show_key, match_hide_range) {
             if let Some(node) = show_nodes.get_mut(&key) {
-                if node.hide_first_line.is_none() {
-                    let hide_text = &source[hide_start..hide_end];
-                    node.hide_first_line = Some(
-                        hide_text.lines().next().unwrap_or("").trim().to_string()
-                    );
-                    // Only set closing line for multi-line bodies
-                    if hide_text.contains('\n') {
-                        node.hide_last_line = Some(
-                            hide_text.lines().last().unwrap_or("").trim().to_string()
-                        );
-                    }
-                }
+                node.hide_ranges.push(hide_range);
             }
         }
     }
@@ -204,36 +184,69 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
         }
     }
 
-    // Apply @hide: remove hidden text from first_line (before @strip so text matches)
+    // Apply @hide and @strip: remove ranges from text
+    // Collect all removal ranges (hide + strip) per show node, sort, and remove
     for node in show_nodes.values_mut() {
-        if let Some(ref hide_fl) = node.hide_first_line {
-            let trimmed = node.first_line.trim_end();
-            if let Some(pos) = trimmed.rfind(hide_fl.as_str()) {
-                node.first_line = trimmed[..pos].trim_end().to_string();
-            }
-        }
-    }
+        let mut ranges: Vec<(usize, usize)> = node.hide_ranges.clone();
 
-    // Apply @strip: remove stripped text from the smallest containing show node
-    for (strip_start, strip_end, strip_text) in &strip_texts {
-        if let Some(key) = find_smallest_containing(&show_nodes, *strip_start, *strip_end) {
-            if let Some(node) = show_nodes.get_mut(&key) {
-                let with_space = format!("{} ", strip_text);
-                let replaced = node.first_line.replacen(&with_space, "", 1);
-                if replaced != node.first_line {
-                    node.first_line = replaced;
+        // Add strip ranges that fall within this node
+        for &(s, e) in &strip_ranges {
+            if s >= node.start_byte && e <= node.end_byte {
+                // Also consume trailing space after strip
+                let strip_end = if e < node.end_byte && source.as_bytes()[e] == b' ' {
+                    e + 1
                 } else {
-                    node.first_line = node.first_line.replacen(strip_text.as_str(), "", 1);
-                }
+                    e
+                };
+                ranges.push((s, strip_end));
             }
         }
+
+        if ranges.is_empty() {
+            continue;
+        }
+
+        // Sort by start position
+        ranges.sort_by_key(|&(s, _)| s);
+
+        // Rebuild text by skipping ranges
+        let mut result = String::new();
+        let mut pos = node.start_byte;
+        for (start, end) in &ranges {
+            if *start > pos {
+                result.push_str(&source[pos..*start]);
+            }
+            pos = pos.max(*end);
+        }
+        if pos < node.end_byte {
+            result.push_str(&source[pos..node.end_byte]);
+        }
+        // Clean up blank lines left by range removal
+        let has_hide = !node.hide_ranges.is_empty();
+        node.text = result
+            .lines()
+            .map(|l| {
+                if has_hide {
+                    l.trim_end_matches(';').trim_end()
+                } else {
+                    l.trim_end()
+                }
+            })
+            .filter(|l| !l.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
     }
 
     // Apply @append: append text to the show node from the same match
     for (key, append_text) in &append_texts {
         if let Some(key) = key {
             if let Some(node) = show_nodes.get_mut(key) {
-                node.first_line.push_str(append_text);
+                // Append to first line
+                if let Some(newline_pos) = node.text.find('\n') {
+                    node.text.insert_str(newline_pos, append_text);
+                } else {
+                    node.text.push_str(append_text);
+                }
             }
         }
     }
@@ -275,18 +288,18 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
         let has_children = children.iter().any(|c| c.indented || c.indent);
 
         if !has_children {
-            // Simple node, just show first line (@hide already applied)
-            let text = node.first_line.trim_end().to_string();
+            // Simple node: show full text
             entries.push(OutlineEntry {
-                text,
+                text: node.text.trim().to_string(),
                 start_line: node.start_line,
                 end_line: node.end_line,
                 noloc: node.noloc,
             });
         } else {
-            // Block node: first line + children + closing line
+            // Block node: first line + children
+            let header = node.text.lines().next().unwrap_or("").trim_end();
             entries.push(OutlineEntry {
-                text: node.first_line.clone(),
+                text: header.to_string(),
                 start_line: node.start_line,
                 end_line: node.end_line,
                 noloc: node.noloc,
@@ -307,7 +320,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
                     continue;
                 }
 
-                let child_text = child.first_line.trim_end();
+                let child_text = child.text.trim();
                 let formatted = if child.indent {
                     child_text.to_string()
                 } else {
@@ -318,16 +331,6 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
                     start_line: child.start_line,
                     end_line: child.end_line,
                     noloc: child.noloc,
-                });
-            }
-
-            // Show closing line from @hide
-            if let Some(ref hide_ll) = node.hide_last_line {
-                entries.push(OutlineEntry {
-                    text: hide_ll.clone(),
-                    start_line: 0,
-                    end_line: 0,
-                    noloc: true,
                 });
             }
 

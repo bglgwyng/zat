@@ -1,11 +1,13 @@
 ; Top-level functions
 (module
-  (function_definition) @show)
+  (function_definition
+    body: (block) @hide) @show)
 
 ; Top-level decorated definitions (show the function, not the decorator)
 (module
   (decorated_definition
-    definition: (function_definition) @show))
+    definition: (function_definition
+      body: (block) @hide) @show))
 
 ; Top-level assignments
 (module
@@ -13,18 +15,21 @@
     (assignment)) @show)
 
 ; Class
-(class_definition) @show
+(class_definition
+  body: (block) @hide) @show
 
 ; Class methods
 (class_definition
   body: (block
-    (function_definition) @show.indented))
+    (function_definition
+      body: (block) @hide) @show.indented))
 
 ; Class decorated methods (show the function, not the decorator)
 (class_definition
   body: (block
     (decorated_definition
-      definition: (function_definition) @show.indented)))
+      definition: (function_definition
+        body: (block) @hide) @show.indented)))
 
 ; Class attributes
 (class_definition

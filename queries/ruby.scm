@@ -8,11 +8,15 @@
 
 ; Instance methods
 (body_statement
-  (method) @show.indented)
+  (method
+    (body_statement) @hide
+    "end" @hide) @show.indented)
 
 ; Singleton methods (class methods like def self.foo)
 (body_statement
-  (singleton_method) @show.indented)
+  (singleton_method
+    (body_statement) @hide
+    "end" @hide) @show.indented)
 
 ; Private keyword hides subsequent methods
 (body_statement
@@ -21,7 +25,9 @@
 
 ; Top-level methods
 (program
-  (method) @show)
+  (method
+    (body_statement) @hide
+    "end" @hide) @show)
 
 ; Top-level assignments (constants)
 (program
