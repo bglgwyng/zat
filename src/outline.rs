@@ -14,8 +14,8 @@ struct ShowNode {
     end_byte: usize,
     start_line: usize,
     end_line: usize,
-    text: String,
     hide_ranges: Vec<(usize, usize)>,
+    append_range: Option<(usize, usize)>,
     noloc: bool,
     show_after: bool,
     hide_after: bool,
@@ -41,8 +41,8 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
         end_byte: 0,
         start_line: 0,
         end_line: 0,
-        text: String::new(),
         hide_ranges: Vec::new(),
+        append_range: None,
         noloc: parts.contains("noloc"),
         show_after: is_show_after,
         hide_after: is_hide_after,
@@ -102,7 +102,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
     let mut show_nodes: BTreeMap<usize, ShowNode> = BTreeMap::new();
     let mut show_node_ids: HashMap<usize, usize> = HashMap::new();
     let mut orphan_hide_nodes: Vec<tree_sitter::Node> = Vec::new();
-    let mut append_texts: Vec<(Option<usize>, String)> = Vec::new();
+    let mut append_ranges: Vec<(Option<usize>, usize, usize)> = Vec::new();
     let mut ref_texts: Vec<String> = Vec::new();
 
     while let Some(m) = matches.next() {
@@ -123,8 +123,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
 
             if capture_name == "append" {
                 if !appended {
-                    let text = source[node.byte_range()].trim().to_string();
-                    append_texts.push((last_show_key, text));
+                    append_ranges.push((last_show_key, node.start_byte(), node.end_byte()));
                     appended = true;
                 }
                 continue;
@@ -147,7 +146,6 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
                 parsed.end_byte = node.end_byte();
                 parsed.start_line = node.start_position().row + 1;
                 parsed.end_line = node.end_position().row + 1;
-                parsed.text = source[node.byte_range()].to_string();
                 last_show_key = Some(start_byte);
                 match_show_ids.push(node.id());
                 show_node_ids.insert(node.id(), start_byte);
@@ -215,33 +213,11 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
         }
     }
 
-    // Build visible text for each node
-    let updates: Vec<(usize, String)> = show_nodes
-        .iter()
-        .filter(|(_, node)| !node.hide_ranges.is_empty())
-        .map(|(&key, node)| {
-            let text = visible_text(source, node)
-                .lines()
-                .map(|l| l.trim_end())
-                .filter(|l| !l.is_empty())
-                .collect::<Vec<_>>()
-                .join("\n");
-            (key, text)
-        })
-        .collect();
-    for (key, text) in updates {
-        show_nodes.get_mut(&key).unwrap().text = text;
-    }
-
-    // Apply @append
-    for (key, append_text) in &append_texts {
+    // Assign @append ranges to their show nodes
+    for (key, start, end) in &append_ranges {
         if let Some(key) = key {
             if let Some(node) = show_nodes.get_mut(key) {
-                if let Some(newline_pos) = node.text.find('\n') {
-                    node.text.insert_str(newline_pos, append_text);
-                } else {
-                    node.text.push_str(append_text);
-                }
+                node.append_range = Some((*start, *end));
             }
         }
     }
@@ -294,8 +270,20 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             continue;
         }
 
+        let mut text = visible_text(source, node);
+        if let Some((s, e)) = node.append_range {
+            text.push_str(source[s..e].trim());
+        }
+        let text = text
+            .lines()
+            .map(|l| l.trim_end())
+            .filter(|l| !l.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n")
+            .trim()
+            .to_string();
         entries.push(OutlineEntry {
-            text: node.text.trim().to_string(),
+            text,
             start_line: node.start_line,
             end_line: node.end_line,
             noloc: node.noloc,
