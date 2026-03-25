@@ -15,7 +15,7 @@ impl OutlineEntry {
         let mut first = true;
         for &(s, e) in &self.ranges {
             for line in source[s..e].lines() {
-                let trimmed = line.trim();
+                let trimmed = line.trim_end();
                 if trimmed.is_empty() {
                     continue;
                 }
