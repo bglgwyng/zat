@@ -45,7 +45,7 @@ struct ShowNode {
     name: Option<String>,
 }
 
-fn parse_capture(name: &str) -> Option<ShowNode> {
+fn parse_capture(name: &str, node: &tree_sitter::Node) -> Option<ShowNode> {
     let parts: std::collections::HashSet<&str> = name.split('.').collect();
 
     let is_show = parts.contains("show");
@@ -58,10 +58,10 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
     }
 
     Some(ShowNode {
-        start_byte: 0,
-        end_byte: 0,
-        start_line: 0,
-        end_line: 0,
+        start_byte: node.start_byte(),
+        end_byte: node.end_byte(),
+        start_line: node.start_position().row + 1,
+        end_line: node.end_position().row + 1,
         hide_ranges: Vec::new(),
         append_range: None,
         noloc: parts.contains("noloc"),
@@ -161,16 +161,11 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
                 continue;
             }
 
-            if let Some(mut parsed) = parse_capture(capture_name) {
-                let start_byte = node.start_byte();
-                parsed.start_byte = start_byte;
-                parsed.end_byte = node.end_byte();
-                parsed.start_line = node.start_position().row + 1;
-                parsed.end_line = node.end_position().row + 1;
-                last_show_key = Some(start_byte);
+            if let Some(parsed) = parse_capture(capture_name, &node) {
+                last_show_key = Some(parsed.start_byte);
                 match_show_ids.push(node.id());
-                show_node_ids.insert(node.id(), start_byte);
-                show_nodes.entry(start_byte).or_insert(parsed);
+                show_node_ids.insert(node.id(), parsed.start_byte);
+                show_nodes.entry(parsed.start_byte).or_insert(parsed);
             }
         }
 
