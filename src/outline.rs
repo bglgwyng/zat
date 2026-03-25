@@ -52,29 +52,37 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
     })
 }
 
-fn visible_text(source: &str, node: &ShowNode) -> String {
+fn visible_ranges(node: &ShowNode) -> Vec<(usize, usize)> {
     let mut sorted_hides: Vec<_> = node.hide_ranges.clone();
     sorted_hides.sort_by_key(|(s, _)| *s);
 
     if sorted_hides.is_empty() {
-        return source[node.start_byte..node.end_byte].to_string();
+        return vec![(node.start_byte, node.end_byte)];
     }
 
-    let mut result = String::new();
+    let mut ranges = Vec::new();
     let mut pos = node.start_byte;
 
     for (hs, he) in sorted_hides {
         if hs > pos {
-            result.push_str(&source[pos..hs]);
+            ranges.push((pos, hs));
         }
         pos = pos.max(he);
     }
 
     if pos < node.end_byte {
-        result.push_str(&source[pos..node.end_byte]);
+        ranges.push((pos, node.end_byte));
     }
 
-    result
+    ranges
+}
+
+fn render_text(source: &str, ranges: &[(usize, usize)]) -> String {
+    ranges
+        .iter()
+        .map(|&(s, e)| &source[s..e])
+        .collect::<Vec<_>>()
+        .concat()
 }
 
 pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<OutlineEntry> {
@@ -270,11 +278,11 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             continue;
         }
 
-        let mut text = visible_text(source, node);
-        if let Some((s, e)) = node.append_range {
-            text.push_str(source[s..e].trim());
+        let mut ranges = visible_ranges(node);
+        if let Some(append) = node.append_range {
+            ranges.push(append);
         }
-        let text = text
+        let text = render_text(source, &ranges)
             .lines()
             .map(|l| l.trim_end())
             .filter(|l| !l.is_empty())
