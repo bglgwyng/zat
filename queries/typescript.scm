@@ -113,6 +113,10 @@
   name: (identifier) @name
   body: (enum_body) @hide) @show_if_ref
 
+; Class body braces
+(class_body "{" @show.noloc)
+(class_body "}" @show.noloc)
+
 ; Class methods (exclude private, hide "public")
 ((method_definition
     body: (statement_block) @hide) @show

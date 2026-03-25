@@ -19,14 +19,31 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
     };
 
     let mut prev_line: Option<usize> = None;
-    // Track line number range for the current output line
+    let mut prev_end_byte: usize = 0;
+    // Buffer current output line for trim_end before flushing
+    let mut line_buf = String::new();
     let mut line_start_num: usize = 0;
     let mut line_end_num: usize = 0;
     let mut line_has_loc = false;
 
+    let flush_line = |buf: &mut String, w: &mut &mut dyn Write, has_loc: bool, start: usize, end: usize| -> io::Result<()> {
+        let trimmed = buf.trim_end();
+        write!(w, "{}", trimmed)?;
+        if has_loc {
+            if end > start {
+                write!(w, " // L{}-L{}", start, end)?;
+            } else {
+                write!(w, " // L{}", start)?;
+            }
+        }
+        writeln!(w)?;
+        buf.clear();
+        Ok(())
+    };
+
     for range in ranges {
-        let text = source[range.start_byte..range.end_byte].trim_end();
-        if text.is_empty() {
+        let text = &source[range.start_byte..range.end_byte];
+        if text.trim().is_empty() {
             continue;
         }
 
@@ -34,33 +51,32 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
         let new_line = prev_line.map_or(true, |prev| start_line > prev);
 
         if new_line {
-            // Emit line number annotation for the previous output line
             if prev_line.is_some() {
-                if line_has_loc {
-                    if line_end_num > line_start_num {
-                        write!(w, " // L{}-L{}", line_start_num, line_end_num)?;
-                    } else {
-                        write!(w, " // L{}", line_start_num)?;
-                    }
-                }
-                writeln!(w)?;
+                flush_line(&mut line_buf, &mut (w as &mut dyn Write), line_has_loc, line_start_num, line_end_num)?;
             }
-            // Compute source line indent
             let line_start = if start_line > 1 { line_starts[start_line - 1] } else { 0 };
             let line_text = &source[line_start..];
             let indent_len = line_text.len() - line_text.trim_start().len();
-            write!(w, "{}{}", prefix, &source[line_start..line_start + indent_len])?;
-            write!(w, "{}", text.trim_start())?;
+            line_buf.push_str(prefix);
+            line_buf.push_str(&source[line_start..line_start + indent_len]);
+            line_buf.push_str(text.trim_start());
             line_start_num = start_line;
             line_end_num = start_line;
             line_has_loc = !range.noloc;
         } else {
-            write!(w, "{}", text)?;
+            if range.start_byte > prev_end_byte {
+                let gap = &source[prev_end_byte..range.start_byte];
+                if !gap.contains('\n') {
+                    line_buf.push_str(gap);
+                }
+            }
+            line_buf.push_str(text);
         }
 
         if !range.noloc {
             line_has_loc = true;
         }
+        prev_end_byte = range.end_byte;
         let last_byte = range.start_byte + text.len();
         let end_line = byte_to_line(last_byte.saturating_sub(1));
         if end_line > line_end_num {
@@ -69,8 +85,9 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
         prev_line = Some(end_line);
     }
 
-    // Emit annotation for the last output line
     if prev_line.is_some() {
+        let trimmed = line_buf.trim_end();
+        write!(w, "{}", trimmed)?;
         if line_has_loc {
             if line_end_num > line_start_num {
                 write!(w, " // L{}-L{}", line_start_num, line_end_num)?;

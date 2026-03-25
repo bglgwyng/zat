@@ -62,6 +62,10 @@
   name: (identifier) @name
   body: (class_body) @hide) @show_if_ref
 
+; Class body braces
+(class_body "{" @show.noloc)
+(class_body "}" @show.noloc)
+
 ; Class methods (public, identified by property_identifier name)
 (method_definition
   name: (property_identifier)

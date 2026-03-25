@@ -17,6 +17,14 @@
   (visibility_modifier) @hide
   body: (enum_variant_list) @hide) @show
 
+; Braces for block types
+(field_declaration_list "{" @show.noloc)
+(field_declaration_list "}" @show.noloc)
+(enum_variant_list "{" @show.noloc)
+(enum_variant_list "}" @show.noloc)
+(declaration_list "{" @show.noloc)
+(declaration_list "}" @show.noloc)
+
 ; Struct fields (pub)
 (field_declaration_list
   (field_declaration
