@@ -1,6 +1,7 @@
 mod outline;
 
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 use tree_sitter::Language;
 
@@ -68,17 +69,19 @@ fn lang_for_ext(ext: &str) -> Option<(Language, &'static str)> {
     })
 }
 
-fn print_entries(entries: &[OutlineEntry], prefix: &str) {
+fn print_entries(source: &str, entries: &[OutlineEntry], prefix: &str) {
+    let mut out = std::io::stdout().lock();
     for entry in entries {
-        print!("{}{}", prefix, entry);
+        let _ = write!(out, "{}", prefix);
+        let _ = entry.write_to(source, &mut out);
         if entry.start_line > 0 && !entry.noloc {
             if entry.end_line > entry.start_line {
-                println!(" // L{}-L{}", entry.start_line, entry.end_line);
+                let _ = writeln!(out, " // L{}-L{}", entry.start_line, entry.end_line);
             } else {
-                println!(" // L{}", entry.start_line);
+                let _ = writeln!(out, " // L{}", entry.start_line);
             }
         } else {
-            println!();
+            let _ = writeln!(out);
         }
     }
 }
@@ -92,7 +95,7 @@ fn view_file(path: &Path) {
                 std::process::exit(1);
             });
             let entries = extract_outline(&source, language, query_src);
-            print_entries(&entries, "");
+            print_entries(&source, &entries, "");
         }
         None => eprintln!("zat: {}: unknown file type", path.display()),
     }

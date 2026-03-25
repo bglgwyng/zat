@@ -1,29 +1,28 @@
 use std::collections::{BTreeMap, HashMap};
-use std::fmt;
+use std::io::{self, Write};
 use streaming_iterator::StreamingIterator;
 use tree_sitter::{Language, Parser, Query, QueryCursor};
 
-pub struct OutlineEntry<'a> {
-    source: &'a str,
-    ranges: Vec<(usize, usize)>,
+pub struct OutlineEntry {
+    pub ranges: Vec<(usize, usize)>,
     pub start_line: usize,
     pub end_line: usize,
     pub noloc: bool,
 }
 
-impl fmt::Display for OutlineEntry<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl OutlineEntry {
+    pub fn write_to(&self, source: &str, w: &mut impl Write) -> io::Result<()> {
         let mut first = true;
         for &(s, e) in &self.ranges {
-            for line in self.source[s..e].lines() {
+            for line in source[s..e].lines() {
                 let trimmed = line.trim();
                 if trimmed.is_empty() {
                     continue;
                 }
                 if !first {
-                    writeln!(f)?;
+                    writeln!(w)?;
                 }
-                write!(f, "{}", trimmed)?;
+                write!(w, "{}", trimmed)?;
                 first = false;
             }
         }
@@ -99,7 +98,7 @@ fn visible_ranges(node: &ShowNode) -> Vec<(usize, usize)> {
     ranges
 }
 
-pub fn extract_outline<'a>(source: &'a str, language: Language, query_src: &str) -> Vec<OutlineEntry<'a>> {
+pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<OutlineEntry> {
     let mut parser = Parser::new();
     parser
         .set_language(&language)
@@ -297,7 +296,6 @@ pub fn extract_outline<'a>(source: &'a str, language: Language, query_src: &str)
             ranges.push(append);
         }
         entries.push(OutlineEntry {
-            source,
             ranges,
             start_line: node.start_line,
             end_line: node.end_line,
