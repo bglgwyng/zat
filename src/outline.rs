@@ -27,19 +27,22 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
         }
 
         let start_line = byte_to_line(range.start_byte);
+        let new_line = prev_line.map_or(true, |prev| start_line > prev);
 
-        if let Some(prev) = prev_line {
-            if start_line > prev {
+        if new_line {
+            if prev_line.is_some() {
                 writeln!(w)?;
-                write!(w, "{}", prefix)?;
             }
+            // Compute source line indent
+            let line_start = if start_line > 1 { line_starts[start_line - 1] } else { 0 };
+            let line_text = &source[line_start..];
+            let indent_len = line_text.len() - line_text.trim_start().len();
+            write!(w, "{}{}", prefix, &source[line_start..line_start + indent_len])?;
+            write!(w, "{}", text.trim_start())?;
         } else {
-            write!(w, "{}", prefix)?;
+            write!(w, "{}", text)?;
         }
 
-        write!(w, "{}", text)?;
-
-        // Track the line of the last byte of visible text
         let last_byte = range.start_byte + text.len();
         prev_line = Some(byte_to_line(last_byte.saturating_sub(1)));
     }
