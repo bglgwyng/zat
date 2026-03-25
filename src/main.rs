@@ -70,7 +70,7 @@ fn lang_for_ext(ext: &str) -> Option<(Language, &'static str)> {
 
 fn print_entries(entries: &[OutlineEntry], prefix: &str) {
     for entry in entries {
-        print!("{}{}", prefix, entry.text);
+        print!("{}{}", prefix, entry);
         if entry.start_line > 0 && !entry.noloc {
             if entry.end_line > entry.start_line {
                 println!(" // L{}-L{}", entry.start_line, entry.end_line);

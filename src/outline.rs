@@ -1,12 +1,34 @@
 use std::collections::{BTreeMap, HashMap};
+use std::fmt;
 use streaming_iterator::StreamingIterator;
 use tree_sitter::{Language, Parser, Query, QueryCursor};
 
-pub struct OutlineEntry {
-    pub text: String,
+pub struct OutlineEntry<'a> {
+    source: &'a str,
+    ranges: Vec<(usize, usize)>,
     pub start_line: usize,
     pub end_line: usize,
     pub noloc: bool,
+}
+
+impl fmt::Display for OutlineEntry<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut first = true;
+        for &(s, e) in &self.ranges {
+            for line in self.source[s..e].lines() {
+                let trimmed = line.trim();
+                if trimmed.is_empty() {
+                    continue;
+                }
+                if !first {
+                    writeln!(f)?;
+                }
+                write!(f, "{}", trimmed)?;
+                first = false;
+            }
+        }
+        Ok(())
+    }
 }
 
 struct ShowNode {
@@ -77,15 +99,7 @@ fn visible_ranges(node: &ShowNode) -> Vec<(usize, usize)> {
     ranges
 }
 
-fn render_text(source: &str, ranges: &[(usize, usize)]) -> String {
-    ranges
-        .iter()
-        .map(|&(s, e)| &source[s..e])
-        .collect::<Vec<_>>()
-        .concat()
-}
-
-pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<OutlineEntry> {
+pub fn extract_outline<'a>(source: &'a str, language: Language, query_src: &str) -> Vec<OutlineEntry<'a>> {
     let mut parser = Parser::new();
     parser
         .set_language(&language)
@@ -282,16 +296,9 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
         if let Some(append) = node.append_range {
             ranges.push(append);
         }
-        let text = render_text(source, &ranges)
-            .lines()
-            .map(|l| l.trim_end())
-            .filter(|l| !l.is_empty())
-            .collect::<Vec<_>>()
-            .join("\n")
-            .trim()
-            .to_string();
         entries.push(OutlineEntry {
-            text,
+            source,
+            ranges,
             start_line: node.start_line,
             end_line: node.end_line,
             noloc: node.noloc,
