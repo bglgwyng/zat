@@ -20,10 +20,10 @@
 ; Struct fields (pub)
 (field_declaration_list
   (field_declaration
-    (visibility_modifier) @hide) @show.indented.noloc)
+    (visibility_modifier) @hide) @show.noloc)
 
 ; Enum variants
-(enum_variant) @show.indented.noloc
+(enum_variant) @show.noloc
 
 ; Public trait
 (trait_item
@@ -32,7 +32,7 @@
 
 ; Trait method signatures
 (declaration_list
-  (function_signature_item) @show.indented)
+  (function_signature_item) @show)
 
 ; Public impl block
 (impl_item
@@ -43,7 +43,7 @@
   body: (declaration_list
     (function_item
       (visibility_modifier) @hide
-      body: (block) @hide) @show.indented))
+      body: (block) @hide) @show))
 
 ; Public type alias
 (type_item

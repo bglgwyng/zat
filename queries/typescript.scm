@@ -123,14 +123,10 @@
   name: (identifier) @name
   body: (enum_body) @hide) @show_if_ref
 
-; Class body braces (preserved within @hide)
-(class_body "{" @show)
-(class_body "}" @show)
-
 ; Class methods (exclude private, strip "public")
 ((method_definition
-    body: (statement_block) @hide) @show.indented
-  (#not-match? @show.indented "^private"))
+    body: (statement_block) @hide) @show
+  (#not-match? @show "^private"))
 (method_definition
   ((accessibility_modifier) @hide
     (#eq? @hide "public")))
@@ -138,25 +134,25 @@
 ; Class fields (exclude private, strip "public", hide initializer)
 ((public_field_definition
     "=" @hide
-    value: (_) @hide) @show.indented
-  (#not-match? @show.indented "^private"))
-((public_field_definition) @show.indented
-  (#not-match? @show.indented "^private"))
+    value: (_) @hide) @show
+  (#not-match? @show "^private"))
+((public_field_definition) @show
+  (#not-match? @show "^private"))
 (public_field_definition
   ((accessibility_modifier) @hide
     (#eq? @hide "public")))
 
 ; Interface members
 (interface_body
-  (property_signature) @show.indented.noloc)
+  (property_signature) @show.noloc)
 (interface_body
-  (method_signature) @show.indented)
+  (method_signature) @show)
 
 ; Object type members (for type aliases)
 (object_type
-  (property_signature) @show.indented.noloc)
+  (property_signature) @show.noloc)
 (object_type
-  (method_signature) @show.indented)
+  (method_signature) @show)
 
 ; Enum members
-(enum_assignment) @show.indented.noloc
+(enum_assignment) @show.noloc

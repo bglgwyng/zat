@@ -22,16 +22,16 @@
 (class_definition
   body: (block
     (function_definition
-      body: (block) @hide) @show.indented))
+      body: (block) @hide) @show))
 
 ; Class decorated methods (show the function, not the decorator)
 (class_definition
   body: (block
     (decorated_definition
       definition: (function_definition
-        body: (block) @hide) @show.indented)))
+        body: (block) @hide) @show)))
 
 ; Class attributes
 (class_definition
   body: (block
-    (expression_statement) @show.indented.noloc))
+    (expression_statement) @show.noloc))

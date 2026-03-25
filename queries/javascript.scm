@@ -67,15 +67,11 @@
   name: (identifier) @name
   body: (class_body) @hide) @show_if_ref
 
-; Class body braces (preserved within @hide)
-(class_body "{" @show)
-(class_body "}" @show)
-
 ; Class methods (public, identified by property_identifier name)
 (method_definition
   name: (property_identifier)
-  body: (statement_block) @hide) @show.indented
+  body: (statement_block) @hide) @show
 
 ; Class fields (public, identified by property_identifier)
 (field_definition
-  property: (property_identifier)) @show.indented.noloc
+  property: (property_identifier)) @show.noloc

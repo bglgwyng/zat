@@ -38,38 +38,38 @@
 
 ; Methods (exclude private, strip "public")
 ((method_declaration
-  body: (block) @hide) @show.indented
-  (#not-match? @show.indented "^private"))
-((method_declaration) @show.indented
-  (#not-match? @show.indented "^private"))
+  body: (block) @hide) @show
+  (#not-match? @show "^private"))
+((method_declaration) @show
+  (#not-match? @show "^private"))
 (method_declaration
   ((modifier) @hide
     (#eq? @hide "public")))
 
 ; Constructors (exclude private, strip "public")
 ((constructor_declaration
-  body: (block) @hide) @show.indented
-  (#not-match? @show.indented "^private"))
+  body: (block) @hide) @show
+  (#not-match? @show "^private"))
 (constructor_declaration
   ((modifier) @hide
     (#eq? @hide "public")))
 
 ; Properties (exclude private, strip "public", hide accessor bodies)
 ((property_declaration
-  accessors: (accessor_list) @hide) @show.indented
-  (#not-match? @show.indented "^private"))
-((property_declaration) @show.indented
-  (#not-match? @show.indented "^private"))
+  accessors: (accessor_list) @hide) @show
+  (#not-match? @show "^private"))
+((property_declaration) @show
+  (#not-match? @show "^private"))
 (property_declaration
   ((modifier) @hide
     (#eq? @hide "public")))
 
 ; Fields (exclude private, strip "public")
-((field_declaration) @show.indented.noloc
-  (#not-match? @show.indented.noloc "^private"))
+((field_declaration) @show.noloc
+  (#not-match? @show.noloc "^private"))
 (field_declaration
   ((modifier) @hide
     (#eq? @hide "public")))
 
 ; Enum members
-(enum_member_declaration) @show.indented.noloc
+(enum_member_declaration) @show.noloc

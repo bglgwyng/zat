@@ -10,13 +10,13 @@
 (body_statement
   (method
     (body_statement) @hide
-    "end" @hide) @show.indented)
+    "end" @hide) @show)
 
 ; Singleton methods (class methods like def self.foo)
 (body_statement
   (singleton_method
     (body_statement) @hide
-    "end" @hide) @show.indented)
+    "end" @hide) @show)
 
 ; Private keyword hides subsequent methods
 (body_statement

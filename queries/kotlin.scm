@@ -42,38 +42,38 @@
 ((class_declaration
   (class_body
     (function_declaration
-      (function_body) @hide) @show.indented))
- (#not-match? @show.indented "^private"))
+      (function_body) @hide) @show))
+ (#not-match? @show "^private"))
 
 ; Member functions (no body — interface/abstract, exclude private)
 ((class_declaration
   (class_body
-    (function_declaration) @show.indented))
- (#not-match? @show.indented "^private"))
+    (function_declaration) @show))
+ (#not-match? @show "^private"))
 
 ; Member properties (exclude private)
 ((class_declaration
   (class_body
-    (property_declaration) @show.indented.noloc))
- (#not-match? @show.indented.noloc "^private"))
+    (property_declaration) @show.noloc))
+ (#not-match? @show.noloc "^private"))
 
 ; Nested class declarations (exclude private)
 ((class_declaration
   (class_body
-    (class_declaration) @show.indented))
- (#not-match? @show.indented "^private"))
+    (class_declaration) @show))
+ (#not-match? @show "^private"))
 
 ; Secondary constructors (exclude private)
 ((class_declaration
   (class_body
-    (secondary_constructor) @show.indented))
- (#not-match? @show.indented "^private"))
+    (secondary_constructor) @show))
+ (#not-match? @show "^private"))
 
 ; Companion object — show collapsed (body hidden)
 (class_declaration
   (class_body
     (companion_object
-      (class_body) @hide) @show.indented))
+      (class_body) @hide) @show))
 
 ; ─── Object declaration body members ─────────────────────────────────────────
 
@@ -81,36 +81,36 @@
 ((object_declaration
   (class_body
     (function_declaration
-      (function_body) @hide) @show.indented))
- (#not-match? @show.indented "^private"))
+      (function_body) @hide) @show))
+ (#not-match? @show "^private"))
 
 ; Object member functions (no body, exclude private)
 ((object_declaration
   (class_body
-    (function_declaration) @show.indented))
- (#not-match? @show.indented "^private"))
+    (function_declaration) @show))
+ (#not-match? @show "^private"))
 
 ; Object member properties (exclude private)
 ((object_declaration
   (class_body
-    (property_declaration) @show.indented.noloc))
- (#not-match? @show.indented.noloc "^private"))
+    (property_declaration) @show.noloc))
+ (#not-match? @show.noloc "^private"))
 
 ; ─── Enum body members ────────────────────────────────────────────────────────
 
 ; Enum entries
 (enum_class_body
-  (enum_entry) @show.indented.noloc)
+  (enum_entry) @show.noloc)
 
 ; Enum member functions (with body, exclude private)
 ((class_declaration
   (enum_class_body
     (function_declaration
-      (function_body) @hide) @show.indented))
- (#not-match? @show.indented "^private"))
+      (function_body) @hide) @show))
+ (#not-match? @show "^private"))
 
 ; Enum member functions (no body, exclude private)
 ((class_declaration
   (enum_class_body
-    (function_declaration) @show.indented))
- (#not-match? @show.indented "^private"))
+    (function_declaration) @show))
+ (#not-match? @show "^private"))

@@ -21,7 +21,7 @@
 
 ; Class method signatures (indented)
 (class_declarations
-  (signature) @show.indented)
+  (signature) @show)
 
 ; instance declaration (hide method bodies, show header)
 (instance

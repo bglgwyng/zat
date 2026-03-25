@@ -12,30 +12,30 @@
 
 ; Methods (exclude private, strip "public")
 ((method_declaration
-  body: (block) @hide) @show.indented
-  (#not-match? @show.indented "^private"))
+  body: (block) @hide) @show
+  (#not-match? @show "^private"))
 
 ; Methods (abstract, no body — exclude private)
-((method_declaration) @show.indented
-  (#not-match? @show.indented "^private"))
+((method_declaration) @show
+  (#not-match? @show "^private"))
 (method_declaration
   ((modifiers) @hide
     (#eq? @hide "public")))
 
 ; Constructors (exclude private, strip "public")
 ((constructor_declaration
-  body: (constructor_body) @hide) @show.indented
-  (#not-match? @show.indented "^private"))
+  body: (constructor_body) @hide) @show
+  (#not-match? @show "^private"))
 (constructor_declaration
   ((modifiers) @hide
     (#eq? @hide "public")))
 
 ; Fields (exclude private, strip "public")
-((field_declaration) @show.indented.noloc
-  (#not-match? @show.indented.noloc "^private"))
+((field_declaration) @show.noloc
+  (#not-match? @show.noloc "^private"))
 (field_declaration
   ((modifiers) @hide
     (#eq? @hide "public")))
 
 ; Enum constants
-(enum_constant) @show.indented.noloc
+(enum_constant) @show.noloc
