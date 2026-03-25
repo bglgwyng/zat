@@ -60,27 +60,6 @@ fn extract_outline(source: & str, path: & str) -> OutlineResult // L33-L196
 
 Only public/exported symbols are shown. Visibility modifiers (`pub`, `export`) are stripped for brevity. Struct fields, enum variants, and interface members are included.
 
-### Directory outline
-
-```shell
-zat src/
-```
-
-```
-lib.rs:
-  struct Config { // L5-L10
-    name: String
-    debug: bool
-  }
-  fn load(path: & str) -> Config // L12-L30
-
-.:
-  lib.rs
-  utils.rs
-```
-
-Looks for entry files (`index.ts`, `lib.rs`, `__init__.py`, etc.) and shows their outlines, followed by a directory listing under `.:`.
-
 ## Supported Languages
 
 | Language | Extensions |
@@ -113,14 +92,7 @@ Add this to your `CLAUDE.md` or `AGENTS.md`:
 
 A code outline viewer that shows exported symbol signatures with line numbers.
 
-**Prefer `zat` over other tools for initial exploration:**
-- **Over `cat` or `Read`** — when you need interfaces/signatures, not full implementation
-- **Over `ls`** — when exploring a directory, to get richer context (entry file outlines + listing)
+Prefer `zat` over `cat`/`Read` when you need signatures, not full implementation. Use the line numbers in the output to `Read(offset, limit)` into specific sections.
 
-Use `zat` first to get an outline, then `Read(offset, limit)` to read only the relevant sections.
-
-- `zat <file>` — Show outline (13 languages supported; falls back to `cat -n` for other types)
-- `zat <dir>` — Show entry file outlines (index.ts, lib.rs, etc.) and directory listing
-- Use the line numbers (e.g. `L10-L25`) to `Read(offset, limit)` into specific ranges
-- Pipe through `head` to limit output: `zat <file> | head -n 50`
+Supported languages: C, C++, C#, Go, Haskell, Java, JavaScript, Kotlin, Python, Ruby, Rust, Swift, TypeScript/TSX
 ````
