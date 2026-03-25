@@ -1,7 +1,6 @@
 mod outline;
 
 use std::fs;
-use std::io::{BufRead, BufReader};
 use std::path::Path;
 use tree_sitter::Language;
 
@@ -97,21 +96,6 @@ fn print_entries(entries: &[OutlineEntry], prefix: &str) {
     }
 }
 
-fn print_fallback(path: &Path) {
-    let file = match fs::File::open(path) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("zat: {}: {}", path.display(), e);
-            std::process::exit(1);
-        }
-    };
-    let reader = BufReader::new(file);
-    for (i, line) in reader.lines().enumerate() {
-        let line = line.unwrap_or_default();
-        println!("{:>6}\t{}", i + 1, line);
-    }
-}
-
 fn view_file(path: &Path) {
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
     match lang_for_ext(ext) {
@@ -123,7 +107,7 @@ fn view_file(path: &Path) {
             let entries = extract_outline(&source, language, query_src);
             print_entries(&entries, "");
         }
-        None => print_fallback(path),
+        None => eprintln!("zat: {}: unknown file type", path.display()),
     }
 }
 
