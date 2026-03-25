@@ -6,19 +6,6 @@ use tree_sitter::Language;
 
 use outline::{OutlineEntry, extract_outline};
 
-const ENTRY_FILES: &[&str] = &[
-    "index.md",
-    "README.md",
-    "index.ts",
-    "index.js",
-    "index.tsx",
-    "index.jsx",
-    "mod.rs",
-    "lib.rs",
-    "main.rs",
-    "__init__.py",
-];
-
 fn lang_for_ext(ext: &str) -> Option<(Language, &'static str)> {
     Some(match ext {
         "go" => (
@@ -111,59 +98,6 @@ fn view_file(path: &Path) {
     }
 }
 
-fn view_directory(dir: &Path) {
-    let mut printed = false;
-
-    for entry_name in ENTRY_FILES {
-        let target = dir.join(entry_name);
-        if target.is_file() {
-            if printed {
-                println!();
-            }
-            println!("{}:", entry_name);
-            let ext = target.extension().and_then(|e| e.to_str()).unwrap_or("");
-            if let Some((language, query_src)) = lang_for_ext(ext) {
-                let source = fs::read_to_string(&target).unwrap_or_default();
-                let entries = extract_outline(&source, language, query_src);
-                print_entries(&entries, "  ");
-            } else {
-                let content = fs::read_to_string(&target).unwrap_or_default();
-                for (i, line) in content.lines().enumerate() {
-                    println!("  {:>6}\t{}", i + 1, line);
-                }
-            }
-            printed = true;
-        }
-    }
-
-    // List directory contents
-    if let Ok(entries) = fs::read_dir(dir) {
-        let mut names: Vec<String> = entries
-            .filter_map(|e| e.ok())
-            .filter_map(|entry| {
-                let name = entry.file_name().to_str()?.to_string();
-                let file_type = entry.file_type().ok()?;
-                Some(if file_type.is_dir() {
-                    format!("{}/", name)
-                } else {
-                    name
-                })
-            })
-            .collect();
-
-        names.sort();
-        if !names.is_empty() {
-            if printed {
-                println!();
-            }
-            println!(".:");
-            for name in &names {
-                println!("  {}", name);
-            }
-        }
-    }
-}
-
 fn main() {
     let path_arg = std::env::args().nth(1).unwrap_or_else(|| {
         eprintln!("Usage: zat <file-or-directory>");
@@ -177,7 +111,8 @@ fn main() {
     }
 
     if path.is_dir() {
-        view_directory(path);
+        eprintln!("zat: {}: is a directory", path.display());
+        std::process::exit(1);
     } else {
         view_file(path);
     }
