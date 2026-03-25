@@ -17,6 +17,7 @@ struct ShowNode {
     text: String,
     hide_ranges: Vec<(usize, usize)>,
     noloc: bool,
+    show_after: bool,
     hide_after: bool,
     show_if_ref: bool,
     referenced: bool,
@@ -28,9 +29,10 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
 
     let is_show = parts.contains("show");
     let is_show_if_ref = parts.contains("show_if_ref");
+    let is_show_after = parts.contains("show_after");
     let is_hide_after = parts.contains("hide_after");
 
-    if !is_show && !is_show_if_ref && !is_hide_after {
+    if !is_show && !is_show_if_ref && !is_show_after && !is_hide_after {
         return None;
     }
 
@@ -42,6 +44,7 @@ fn parse_capture(name: &str) -> Option<ShowNode> {
         text: String::new(),
         hide_ranges: Vec::new(),
         noloc: parts.contains("noloc"),
+        show_after: is_show_after,
         hide_after: is_hide_after,
         show_if_ref: is_show_if_ref,
         referenced: false,
@@ -244,14 +247,50 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
     }
 
     // Build output: flat list of all @show entries
+    // @hide_after / @show_after toggle sibling visibility within a scope
     let mut entries = Vec::new();
+    let mut hidden_until: Option<usize> = None; // end_byte of hide scope
 
     for node in show_nodes.values() {
-        if node.hide_after {
-            continue;
+        // Exit hide scope when past its boundary
+        if let Some(end) = hidden_until {
+            if node.start_byte >= end {
+                hidden_until = None;
+            }
         }
 
+        // @show_after: clear hide scope (make subsequent siblings visible again)
+        if node.show_after {
+            hidden_until = None;
+        }
+
+        // @hide_after: hide subsequent siblings until scope ends
+        if node.hide_after {
+            // Find the containing @show to determine scope boundary
+            let scope_end = show_nodes
+                .values()
+                .filter(|n| {
+                    n.start_byte < node.start_byte
+                        && n.end_byte > node.end_byte
+                        && !n.hide_after
+                        && !n.show_after
+                })
+                .min_by_key(|n| n.end_byte - n.start_byte)
+                .map(|n| n.end_byte);
+            hidden_until = scope_end;
+        }
+
+        // Skip toggle-only nodes and hidden nodes
+        if node.hide_after && !node.show_if_ref {
+            continue;
+        }
+        if node.show_after && !node.show_if_ref {
+            continue;
+        }
         if node.show_if_ref && !node.referenced {
+            continue;
+        }
+        if hidden_until.is_some() {
             continue;
         }
 
