@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::{self, Write};
 use streaming_iterator::StreamingIterator;
 use tree_sitter::{Language, Parser, Query, QueryCursor};
@@ -104,6 +104,7 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
 struct ShowNode {
     start_byte: usize,
     end_byte: usize,
+    parent_id: Option<usize>, // AST parent node ID for sibling scoping
     hide_ranges: Vec<(usize, usize)>,
     show: bool,
     noloc: bool,
@@ -114,7 +115,7 @@ struct ShowNode {
     name: Option<String>,
 }
 
-fn parse_capture(name: &str, node: &tree_sitter::Node) -> Option<ShowNode> {
+fn parse_capture(name: &str, node: &tree_sitter::Node, parent_id: Option<usize>) -> Option<ShowNode> {
     let parts: std::collections::HashSet<&str> = name.split('.').collect();
 
     let is_show = parts.contains("show");
@@ -129,6 +130,7 @@ fn parse_capture(name: &str, node: &tree_sitter::Node) -> Option<ShowNode> {
     Some(ShowNode {
         start_byte: node.start_byte(),
         end_byte: node.end_byte(),
+        parent_id,
         hide_ranges: Vec::new(),
         show: is_show || is_show_if_ref,
         noloc: parts.contains("noloc"),
@@ -218,7 +220,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
                 continue;
             }
 
-            if let Some(parsed) = parse_capture(capture_name, &node) {
+            if let Some(parsed) = parse_capture(capture_name, &node, node.parent().map(|p| p.id())) {
                 last_show_key = Some(parsed.start_byte);
                 match_show_ids.push(node.id());
                 show_node_ids.insert(node.id(), parsed.start_byte);
@@ -286,55 +288,39 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
         }
     }
 
-    // Walk the AST tree to collect visible ranges
+    // Collect visible ranges by iterating show_nodes in source order
     let mut ranges = Vec::new();
-    collect_ranges(
-        tree.root_node(),
-        &show_node_ids,
-        &show_nodes,
-        &mut ranges,
-    );
+    let mut hidden_parents: HashSet<usize> = HashSet::new();
 
-    ranges
-}
-
-fn collect_ranges(
-    parent: tree_sitter::Node,
-    show_node_ids: &HashMap<usize, usize>,
-    show_nodes: &BTreeMap<usize, ShowNode>,
-    ranges: &mut Vec<VisibleRange>,
-) {
-    let mut hidden = false;
-
-    for i in 0..parent.child_count() as u32 {
-        let child = parent.child(i).unwrap();
-
-        if let Some(&start_byte) = show_node_ids.get(&child.id()) {
-            if let Some(node) = show_nodes.get(&start_byte) {
-                if node.show_after {
-                    hidden = false;
-                }
-                if node.hide_after {
-                    hidden = true;
-                }
-
-                let should_emit = node.show
-                    && !(node.show_if_ref && !node.referenced)
-                    && !hidden;
-
-                if should_emit {
-                    for (s, e) in visible_ranges(node) {
-                        ranges.push(VisibleRange {
-                            start_byte: s,
-                            end_byte: e,
-                            noloc: node.noloc,
-                        });
-                    }
-                }
+    for node in show_nodes.values() {
+        // Handle sibling visibility toggles (scoped by parent)
+        if let Some(pid) = node.parent_id {
+            if node.show_after {
+                hidden_parents.remove(&pid);
+            }
+            if node.hide_after {
+                hidden_parents.insert(pid);
             }
         }
 
-        // Recurse to find deeper captures
-        collect_ranges(child, show_node_ids, show_nodes, ranges);
+        if !node.show {
+            continue;
+        }
+        if node.show_if_ref && !node.referenced {
+            continue;
+        }
+        if node.parent_id.map_or(false, |pid| hidden_parents.contains(&pid)) {
+            continue;
+        }
+
+        for (s, e) in visible_ranges(node) {
+            ranges.push(VisibleRange {
+                start_byte: s,
+                end_byte: e,
+                noloc: node.noloc,
+            });
+        }
     }
+
+    ranges
 }
