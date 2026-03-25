@@ -1,18 +1,18 @@
 ; Exported function
 (export_statement
-  "export" @strip
+  "export" @hide
   declaration: (function_declaration
     body: (statement_block) @hide)) @show
 
 ; Exported class
 (export_statement
-  "export" @strip
+  "export" @hide
   declaration: (class_declaration
     body: (class_body) @hide)) @show
 
 ; Exported variable/const (non-literal value, hide = value)
 (export_statement
-  "export" @strip
+  "export" @hide
   declaration: (lexical_declaration
     (variable_declarator
       "=" @hide
@@ -25,7 +25,7 @@
 
 ; Exported variable/const (typed, hide = value)
 (export_statement
-  "export" @strip
+  "export" @hide
   declaration: (lexical_declaration
     (variable_declarator
       type: (type_annotation)
@@ -34,41 +34,41 @@
 
 ; Exported variable/const (fallback - keeps literal values)
 (export_statement
-  "export" @strip
+  "export" @hide
   declaration: (lexical_declaration)) @show
 
 ; Exported interface
 (export_statement
-  "export" @strip
+  "export" @hide
   declaration: (interface_declaration
     body: (interface_body) @hide)) @show
 
 ; Exported type alias (object type, show members)
 (export_statement
-  "export" @strip
+  "export" @hide
   declaration: (type_alias_declaration
     value: (object_type) @hide)) @show
 
 ; Exported type alias (other)
 (export_statement
-  "export" @strip
+  "export" @hide
   declaration: (type_alias_declaration)) @show
 
 ; Exported enum
 (export_statement
-  "export" @strip
+  "export" @hide
   declaration: (enum_declaration
     body: (enum_body) @hide)) @show
 
 ; Export default
 (export_statement
-  "export" @strip
+  "export" @hide
   (function_declaration
     body: (statement_block) @hide)) @show
 
 ; Re-exports
 (export_statement
-  "export" @strip
+  "export" @hide
   source: (string)) @show
 
 ; Named exports: resolve references
@@ -123,13 +123,17 @@
   name: (identifier) @name
   body: (enum_body) @hide) @show_if_ref
 
+; Class body braces (preserved within @hide)
+(class_body "{" @show)
+(class_body "}" @show)
+
 ; Class methods (exclude private, strip "public")
 ((method_definition
     body: (statement_block) @hide) @show.indented
   (#not-match? @show.indented "^private"))
 (method_definition
-  ((accessibility_modifier) @strip
-    (#eq? @strip "public")))
+  ((accessibility_modifier) @hide
+    (#eq? @hide "public")))
 
 ; Class fields (exclude private, strip "public", hide initializer)
 ((public_field_definition
@@ -139,8 +143,8 @@
 ((public_field_definition) @show.indented
   (#not-match? @show.indented "^private"))
 (public_field_definition
-  ((accessibility_modifier) @strip
-    (#eq? @strip "public")))
+  ((accessibility_modifier) @hide
+    (#eq? @hide "public")))
 
 ; Interface members
 (interface_body

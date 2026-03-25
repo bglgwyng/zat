@@ -21,20 +21,20 @@
 
 ; Strip visibility/other modifiers from type declarations
 (class_declaration
-  ((modifier) @strip
-    (#match? @strip "^(public|internal|private|protected|static|abstract|sealed|partial)$")))
+  ((modifier) @hide
+    (#match? @hide "^(public|internal|private|protected|static|abstract|sealed|partial)$")))
 (interface_declaration
-  ((modifier) @strip
-    (#match? @strip "^(public|internal|private|protected|partial)$")))
+  ((modifier) @hide
+    (#match? @hide "^(public|internal|private|protected|partial)$")))
 (struct_declaration
-  ((modifier) @strip
-    (#match? @strip "^(public|internal|private|protected|static|partial)$")))
+  ((modifier) @hide
+    (#match? @hide "^(public|internal|private|protected|static|partial)$")))
 (enum_declaration
-  ((modifier) @strip
-    (#match? @strip "^(public|internal|private|protected)$")))
+  ((modifier) @hide
+    (#match? @hide "^(public|internal|private|protected)$")))
 (record_declaration
-  ((modifier) @strip
-    (#match? @strip "^(public|internal|private|protected|partial)$")))
+  ((modifier) @hide
+    (#match? @hide "^(public|internal|private|protected|partial)$")))
 
 ; Methods (exclude private, strip "public")
 ((method_declaration
@@ -43,16 +43,16 @@
 ((method_declaration) @show.indented
   (#not-match? @show.indented "^private"))
 (method_declaration
-  ((modifier) @strip
-    (#eq? @strip "public")))
+  ((modifier) @hide
+    (#eq? @hide "public")))
 
 ; Constructors (exclude private, strip "public")
 ((constructor_declaration
   body: (block) @hide) @show.indented
   (#not-match? @show.indented "^private"))
 (constructor_declaration
-  ((modifier) @strip
-    (#eq? @strip "public")))
+  ((modifier) @hide
+    (#eq? @hide "public")))
 
 ; Properties (exclude private, strip "public", hide accessor bodies)
 ((property_declaration
@@ -61,15 +61,15 @@
 ((property_declaration) @show.indented
   (#not-match? @show.indented "^private"))
 (property_declaration
-  ((modifier) @strip
-    (#eq? @strip "public")))
+  ((modifier) @hide
+    (#eq? @hide "public")))
 
 ; Fields (exclude private, strip "public")
 ((field_declaration) @show.indented.noloc
   (#not-match? @show.indented.noloc "^private"))
 (field_declaration
-  ((modifier) @strip
-    (#eq? @strip "public")))
+  ((modifier) @hide
+    (#eq? @hide "public")))
 
 ; Enum members
 (enum_member_declaration) @show.indented.noloc
