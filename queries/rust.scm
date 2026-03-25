@@ -17,13 +17,37 @@
   (visibility_modifier) @hide
   body: (enum_variant_list) @hide) @show
 
-; Braces for block types
-(field_declaration_list "{" @show.noloc)
-(field_declaration_list "}" @show.noloc)
-(enum_variant_list "{" @show.noloc)
-(enum_variant_list "}" @show.noloc)
-(declaration_list "{" @show.noloc)
-(declaration_list "}" @show.noloc)
+; Braces for block types (scoped to avoid matching nested braces)
+(struct_item
+  body: (field_declaration_list
+    "{" @show.noloc))
+(struct_item
+  body: (field_declaration_list
+    "}" @show.noloc))
+(enum_item
+  body: (enum_variant_list
+    "{" @show.noloc))
+(enum_item
+  body: (enum_variant_list
+    "}" @show.noloc))
+(trait_item
+  body: (declaration_list
+    "{" @show.noloc))
+(trait_item
+  body: (declaration_list
+    "}" @show.noloc))
+(impl_item
+  body: (declaration_list
+    "{" @show.noloc))
+(impl_item
+  body: (declaration_list
+    "}" @show.noloc))
+(mod_item
+  body: (declaration_list
+    "{" @show.noloc))
+(mod_item
+  body: (declaration_list
+    "}" @show.noloc))
 
 ; Struct fields (pub)
 (field_declaration_list
