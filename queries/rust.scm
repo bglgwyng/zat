@@ -17,23 +17,29 @@
   (visibility_modifier) @hide
   body: (enum_variant_list) @hide) @show
 
-; Braces for block types (scoped to avoid matching nested braces)
+; Braces for pub block types
 (struct_item
+  (visibility_modifier)
   body: (field_declaration_list
     "{" @show.noloc))
 (struct_item
+  (visibility_modifier)
   body: (field_declaration_list
     "}" @show.noloc))
 (enum_item
+  (visibility_modifier)
   body: (enum_variant_list
     "{" @show.noloc))
 (enum_item
+  (visibility_modifier)
   body: (enum_variant_list
     "}" @show.noloc))
 (trait_item
+  (visibility_modifier)
   body: (declaration_list
     "{" @show.noloc))
 (trait_item
+  (visibility_modifier)
   body: (declaration_list
     "}" @show.noloc))
 (impl_item
@@ -43,9 +49,11 @@
   body: (declaration_list
     "}" @show.noloc))
 (mod_item
+  (visibility_modifier)
   body: (declaration_list
     "{" @show.noloc))
 (mod_item
+  (visibility_modifier)
   body: (declaration_list
     "}" @show.noloc))
 
