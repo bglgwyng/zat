@@ -37,9 +37,10 @@ struct ShowNode {
     end_line: usize,
     hide_ranges: Vec<(usize, usize)>,
     append_range: Option<(usize, usize)>,
+    show: bool,      // emit as entry
     noloc: bool,
-    show_after: bool,
-    hide_after: bool,
+    show_after: bool, // toggle: make subsequent siblings visible
+    hide_after: bool, // toggle: make subsequent siblings hidden
     show_if_ref: bool,
     referenced: bool,
     name: Option<String>,
@@ -64,6 +65,7 @@ fn parse_capture(name: &str, node: &tree_sitter::Node) -> Option<ShowNode> {
         end_line: node.end_position().row + 1,
         hide_ranges: Vec::new(),
         append_range: None,
+        show: is_show || is_show_if_ref,
         noloc: parts.contains("noloc"),
         show_after: is_show_after,
         hide_after: is_hide_after,
@@ -238,65 +240,58 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
         }
     }
 
-    // Build output: flat list of all @show entries
-    // @hide_after / @show_after toggle sibling visibility within a scope
+    // Walk the AST tree to build output, using tree structure for sibling scoping
     let mut entries = Vec::new();
-    let mut hidden_until: Option<usize> = None; // end_byte of hide scope
+    collect_entries(
+        tree.root_node(),
+        &show_node_ids,
+        &show_nodes,
+        &mut entries,
+    );
 
-    for node in show_nodes.values() {
-        // Exit hide scope when past its boundary
-        if let Some(end) = hidden_until {
-            if node.start_byte >= end {
-                hidden_until = None;
+    entries
+}
+
+fn collect_entries(
+    parent: tree_sitter::Node,
+    show_node_ids: &HashMap<usize, usize>,
+    show_nodes: &BTreeMap<usize, ShowNode>,
+    entries: &mut Vec<OutlineEntry>,
+) {
+    let mut hidden = false;
+
+    for i in 0..parent.child_count() as u32 {
+        let child = parent.child(i).unwrap();
+
+        if let Some(&start_byte) = show_node_ids.get(&child.id()) {
+            if let Some(node) = show_nodes.get(&start_byte) {
+                if node.show_after {
+                    hidden = false;
+                }
+                if node.hide_after {
+                    hidden = true;
+                }
+
+                let should_emit = node.show
+                    && !(node.show_if_ref && !node.referenced)
+                    && !hidden;
+
+                if should_emit {
+                    let mut ranges = visible_ranges(node);
+                    if let Some(append) = node.append_range {
+                        ranges.push(append);
+                    }
+                    entries.push(OutlineEntry {
+                        ranges,
+                        start_line: node.start_line,
+                        end_line: node.end_line,
+                        noloc: node.noloc,
+                    });
+                }
             }
         }
 
-        // @show_after: clear hide scope (make subsequent siblings visible again)
-        if node.show_after {
-            hidden_until = None;
-        }
-
-        // @hide_after: hide subsequent siblings until scope ends
-        if node.hide_after {
-            // Find the containing @show to determine scope boundary
-            let scope_end = show_nodes
-                .values()
-                .filter(|n| {
-                    n.start_byte < node.start_byte
-                        && n.end_byte > node.end_byte
-                        && !n.hide_after
-                        && !n.show_after
-                })
-                .min_by_key(|n| n.end_byte - n.start_byte)
-                .map(|n| n.end_byte);
-            hidden_until = scope_end;
-        }
-
-        // Skip toggle-only nodes and hidden nodes
-        if node.hide_after && !node.show_if_ref {
-            continue;
-        }
-        if node.show_after && !node.show_if_ref {
-            continue;
-        }
-        if node.show_if_ref && !node.referenced {
-            continue;
-        }
-        if hidden_until.is_some() {
-            continue;
-        }
-
-        let mut ranges = visible_ranges(node);
-        if let Some(append) = node.append_range {
-            ranges.push(append);
-        }
-        entries.push(OutlineEntry {
-            ranges,
-            start_line: node.start_line,
-            end_line: node.end_line,
-            noloc: node.noloc,
-        });
+        // Recurse to find deeper captures
+        collect_entries(child, show_node_ids, show_nodes, entries);
     }
-
-    entries
 }
