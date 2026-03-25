@@ -297,7 +297,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             });
         } else {
             // Block node: first line + children
-            let header = node.text.lines().next().unwrap_or("").trim_end();
+            let header = node.text.trim_end();
             entries.push(OutlineEntry {
                 text: header.to_string(),
                 start_line: node.start_line,
