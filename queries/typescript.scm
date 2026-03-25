@@ -140,11 +140,19 @@
 
 ; Interface members
 (interface_body
+  "{" @show.noloc)
+(interface_body
+  "}" @show.noloc)
+(interface_body
   (property_signature) @show.noloc)
 (interface_body
   (method_signature) @show)
 
 ; Object type members (for type aliases)
+(object_type
+  "{" @show.noloc)
+(object_type
+  "}" @show.noloc)
 (object_type
   (property_signature) @show.noloc)
 (object_type

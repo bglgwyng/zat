@@ -1,7 +1,7 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::{self, Write};
 use streaming_iterator::StreamingIterator;
-use tree_sitter::{Language, Parser, Query, QueryCursor};
+use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
 
 pub struct VisibleRange {
     pub start_byte: usize,
@@ -9,24 +9,36 @@ pub struct VisibleRange {
     pub noloc: bool,
 }
 
-pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mut impl Write) -> io::Result<()> {
-    // Pre-compute line starts for byte→line lookup
+pub fn write_outline(
+    source: &str,
+    ranges: &[VisibleRange],
+    prefix: &str,
+    w: &mut impl Write,
+) -> io::Result<()> {
     let line_starts: Vec<usize> = std::iter::once(0)
-        .chain(source.bytes().enumerate().filter_map(|(i, b)| if b == b'\n' { Some(i + 1) } else { None }))
+        .chain(
+            source
+                .bytes()
+                .enumerate()
+                .filter_map(|(i, b)| if b == b'\n' { Some(i + 1) } else { None }),
+        )
         .collect();
-    let byte_to_line = |byte: usize| -> usize {
-        line_starts.partition_point(|&start| start <= byte)
-    };
+    let byte_to_line =
+        |byte: usize| -> usize { line_starts.partition_point(|&start| start <= byte) };
 
     let mut prev_line: Option<usize> = None;
     let mut prev_end_byte: usize = 0;
-    // Buffer current output line for trim_end before flushing
     let mut line_buf = String::new();
     let mut line_start_num: usize = 0;
     let mut line_end_num: usize = 0;
     let mut line_has_loc = false;
 
-    let flush_line = |buf: &mut String, w: &mut &mut dyn Write, has_loc: bool, start: usize, end: usize| -> io::Result<()> {
+    let flush_line = |buf: &mut String,
+                      w: &mut &mut dyn Write,
+                      has_loc: bool,
+                      start: usize,
+                      end: usize|
+     -> io::Result<()> {
         let trimmed = buf.trim_end();
         write!(w, "{}", trimmed)?;
         if has_loc {
@@ -52,9 +64,19 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
 
         if new_line {
             if prev_line.is_some() {
-                flush_line(&mut line_buf, &mut (w as &mut dyn Write), line_has_loc, line_start_num, line_end_num)?;
+                flush_line(
+                    &mut line_buf,
+                    &mut (w as &mut dyn Write),
+                    line_has_loc,
+                    line_start_num,
+                    line_end_num,
+                )?;
             }
-            let line_start = if start_line > 1 { line_starts[start_line - 1] } else { 0 };
+            let line_start = if start_line > 1 {
+                line_starts[start_line - 1]
+            } else {
+                0
+            };
             let line_text = &source[line_start..];
             let indent_len = line_text.len() - line_text.trim_start().len();
             line_buf.push_str(prefix);
@@ -101,70 +123,16 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
     Ok(())
 }
 
-struct ShowNode {
-    start_byte: usize,
-    end_byte: usize,
-    parent_id: Option<usize>, // AST parent node ID for sibling scoping
-    hide_ranges: Vec<(usize, usize)>,
-    show: bool,
+struct CaptureNode<'a> {
+    node: Node<'a>,
+    is_show: bool,
+    is_hide: bool,
     noloc: bool,
     show_after: bool,
     hide_after: bool,
     show_if_ref: bool,
     referenced: bool,
     name: Option<String>,
-}
-
-fn parse_capture(name: &str, node: &tree_sitter::Node, parent_id: Option<usize>) -> Option<ShowNode> {
-    let parts: std::collections::HashSet<&str> = name.split('.').collect();
-
-    let is_show = parts.contains("show");
-    let is_show_if_ref = parts.contains("show_if_ref");
-    let is_show_after = parts.contains("show_after");
-    let is_hide_after = parts.contains("hide_after");
-
-    if !is_show && !is_show_if_ref && !is_show_after && !is_hide_after {
-        return None;
-    }
-
-    Some(ShowNode {
-        start_byte: node.start_byte(),
-        end_byte: node.end_byte(),
-        parent_id,
-        hide_ranges: Vec::new(),
-        show: is_show || is_show_if_ref,
-        noloc: parts.contains("noloc"),
-        show_after: is_show_after,
-        hide_after: is_hide_after,
-        show_if_ref: is_show_if_ref,
-        referenced: false,
-        name: None,
-    })
-}
-
-fn visible_ranges(node: &ShowNode) -> Vec<(usize, usize)> {
-    let mut sorted_hides: Vec<_> = node.hide_ranges.clone();
-    sorted_hides.sort_by_key(|(s, _)| *s);
-
-    if sorted_hides.is_empty() {
-        return vec![(node.start_byte, node.end_byte)];
-    }
-
-    let mut ranges = Vec::new();
-    let mut pos = node.start_byte;
-
-    for (hs, he) in sorted_hides {
-        if hs > pos {
-            ranges.push((pos, hs));
-        }
-        pos = pos.max(he);
-    }
-
-    if pos < node.end_byte {
-        ranges.push((pos, node.end_byte));
-    }
-
-    ranges
 }
 
 pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<VisibleRange> {
@@ -189,25 +157,17 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
     let mut cursor = QueryCursor::new();
     let mut matches = cursor.matches(&query, tree.root_node(), source.as_bytes());
 
-    let mut show_nodes: BTreeMap<usize, ShowNode> = BTreeMap::new();
-    let mut show_node_ids: HashMap<usize, usize> = HashMap::new();
-    let mut orphan_hide_nodes: Vec<tree_sitter::Node> = Vec::new();
+    // Phase 1: Collect all captures into a flat map keyed by node ID
+    let mut captures: HashMap<usize, CaptureNode> = HashMap::new();
     let mut ref_texts: Vec<String> = Vec::new();
 
     while let Some(m) = matches.next() {
-        let mut match_show_ids: Vec<usize> = Vec::new();
-        let mut match_hide_nodes: Vec<tree_sitter::Node> = Vec::new();
         let mut match_name: Option<String> = None;
-        let mut last_show_key: Option<usize> = None;
+        let mut match_show_if_ref_id: Option<usize> = None;
 
         for cap in m.captures {
             let capture_name: &str = &query.capture_names()[cap.index as usize];
             let node = cap.node;
-
-            if capture_name == "hide" {
-                match_hide_nodes.push(node);
-                continue;
-            }
 
             if capture_name == "name" {
                 match_name = Some(source[node.byte_range()].trim().to_string());
@@ -215,112 +175,175 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             }
 
             if capture_name == "ref" {
-                let text = source[node.byte_range()].trim().to_string();
-                ref_texts.push(text);
+                ref_texts.push(source[node.byte_range()].trim().to_string());
                 continue;
             }
 
-            if let Some(parsed) = parse_capture(capture_name, &node, node.parent().map(|p| p.id())) {
-                last_show_key = Some(parsed.start_byte);
-                match_show_ids.push(node.id());
-                show_node_ids.insert(node.id(), parsed.start_byte);
-                show_nodes.entry(parsed.start_byte).or_insert(parsed);
+            if capture_name == "hide" {
+                captures.entry(node.id()).or_insert(CaptureNode {
+                    node,
+                    is_show: false,
+                    is_hide: true,
+                    noloc: false,
+                    show_after: false,
+                    hide_after: false,
+                    show_if_ref: false,
+                    referenced: false,
+                    name: None,
+                });
+                continue;
             }
-        }
 
-        // Assign @hide to nearest @show ancestor within this match
-        for hide_node in match_hide_nodes {
-            let (hs, he) = (hide_node.start_byte(), hide_node.end_byte());
-            let mut assigned = false;
-            let mut ancestor = hide_node.parent();
-            while let Some(a) = ancestor {
-                if match_show_ids.contains(&a.id()) {
-                    let start_byte = show_node_ids[&a.id()];
-                    show_nodes
-                        .get_mut(&start_byte)
-                        .unwrap()
-                        .hide_ranges
-                        .push((hs, he));
-                    assigned = true;
-                    break;
-                }
-                ancestor = a.parent();
+            let parts: std::collections::HashSet<&str> = capture_name.split('.').collect();
+            let is_show = parts.contains("show");
+            let is_show_if_ref = parts.contains("show_if_ref");
+            let is_show_after = parts.contains("show_after");
+            let is_hide_after = parts.contains("hide_after");
+
+            if !is_show && !is_show_if_ref && !is_show_after && !is_hide_after {
+                continue;
             }
-            if !assigned {
-                orphan_hide_nodes.push(hide_node);
+
+            if is_show_if_ref {
+                match_show_if_ref_id = Some(node.id());
             }
-        }
 
-        // Assign @name to the (unique) @show_if_ref from this match
-        if let Some(name_text) = match_name {
-            if let Some(key) = last_show_key {
-                if let Some(node) = show_nodes.get_mut(&key) {
-                    node.name = Some(name_text);
-                }
-            }
-        }
-    }
-
-    // Assign orphan @hide to nearest @show ancestor via parent walk
-    for hide_node in &orphan_hide_nodes {
-        let (hs, he) = (hide_node.start_byte(), hide_node.end_byte());
-        let mut ancestor = hide_node.parent();
-        while let Some(a) = ancestor {
-            if let Some(&start_byte) = show_node_ids.get(&a.id()) {
-                show_nodes
-                    .get_mut(&start_byte)
-                    .unwrap()
-                    .hide_ranges
-                    .push((hs, he));
-                break;
-            }
-            ancestor = a.parent();
-        }
-    }
-
-    // Apply @ref: mark matching nodes as referenced
-    for ref_text in &ref_texts {
-        for node in show_nodes.values_mut() {
-            if node.name.as_deref() == Some(ref_text.as_str()) {
-                node.referenced = true;
-                break;
-            }
-        }
-    }
-
-    // Collect visible ranges by iterating show_nodes in source order
-    let mut ranges = Vec::new();
-    let mut hidden_parents: HashSet<usize> = HashSet::new();
-
-    for node in show_nodes.values() {
-        // Handle sibling visibility toggles (scoped by parent)
-        if let Some(pid) = node.parent_id {
-            if node.show_after {
-                hidden_parents.remove(&pid);
-            }
-            if node.hide_after {
-                hidden_parents.insert(pid);
-            }
-        }
-
-        if !node.show {
-            continue;
-        }
-        if node.show_if_ref && !node.referenced {
-            continue;
-        }
-        if node.parent_id.map_or(false, |pid| hidden_parents.contains(&pid)) {
-            continue;
-        }
-
-        for (s, e) in visible_ranges(node) {
-            ranges.push(VisibleRange {
-                start_byte: s,
-                end_byte: e,
-                noloc: node.noloc,
+            captures.entry(node.id()).or_insert(CaptureNode {
+                node,
+                is_show: is_show || is_show_if_ref,
+                is_hide: false,
+                noloc: parts.contains("noloc"),
+                show_after: is_show_after,
+                hide_after: is_hide_after,
+                show_if_ref: is_show_if_ref,
+                referenced: false,
+                name: None,
             });
         }
+
+        if let Some(name) = match_name {
+            if let Some(id) = match_show_if_ref_id {
+                if let Some(cap) = captures.get_mut(&id) {
+                    cap.name = Some(name);
+                }
+            }
+        }
+    }
+
+    // Phase 2: Build tree — stack-based, O(C log C)
+    let mut sorted_ids: Vec<usize> = captures.keys().copied().collect();
+    sorted_ids.sort_by(|&a, &b| {
+        let (ca, cb) = (&captures[&a], &captures[&b]);
+        ca.node
+            .start_byte()
+            .cmp(&cb.node.start_byte())
+            .then(cb.node.end_byte().cmp(&ca.node.end_byte()))
+    });
+
+    let mut children_map: HashMap<usize, Vec<usize>> = HashMap::new();
+    let mut root_ids: Vec<usize> = Vec::new();
+    let mut stack: Vec<usize> = Vec::new();
+
+    for &id in &sorted_ids {
+        let start = captures[&id].node.start_byte();
+        while let Some(&top) = stack.last() {
+            if captures[&top].node.end_byte() > start {
+                break;
+            }
+            stack.pop();
+        }
+        if let Some(&parent) = stack.last() {
+            children_map.entry(parent).or_default().push(id);
+        } else {
+            root_ids.push(id);
+        }
+        stack.push(id);
+    }
+
+    // Phase 3: Apply @ref — mark matching @show_if_ref nodes as referenced
+    for ref_text in &ref_texts {
+        for cap in captures.values_mut() {
+            if cap.name.as_deref() == Some(ref_text.as_str()) {
+                cap.referenced = true;
+                break;
+            }
+        }
+    }
+
+    // Phase 4: Walk tree to generate visible ranges
+    let mut ranges = Vec::new();
+    for &id in &root_ids {
+        emit_ranges(id, &captures, &children_map, &mut ranges);
     }
 
     ranges
+}
+
+fn emit_ranges(
+    node_id: usize,
+    captures: &HashMap<usize, CaptureNode>,
+    children_map: &HashMap<usize, Vec<usize>>,
+    output: &mut Vec<VisibleRange>,
+) {
+    let cap = &captures[&node_id];
+    let children = children_map
+        .get(&node_id)
+        .map(|v| v.as_slice())
+        .unwrap_or(&[]);
+
+    // Hide node: recurse into children with sibling visibility toggle
+    if cap.is_hide {
+        let mut hidden = false;
+        for &child_id in children {
+            let child = &captures[&child_id];
+            if child.show_after {
+                hidden = false;
+            }
+            if child.hide_after {
+                hidden = true;
+            }
+            if !hidden {
+                emit_ranges(child_id, captures, children_map, output);
+            }
+        }
+        return;
+    }
+
+    // Toggle-only node (show_after/hide_after without show): nothing to emit
+    if !cap.is_show {
+        return;
+    }
+
+    // Unreferenced show_if_ref: skip
+    if cap.show_if_ref && !cap.referenced {
+        return;
+    }
+
+    // Show node: emit own byte range minus children's ranges
+    let mut pos = cap.node.start_byte();
+    let end = cap.node.end_byte();
+
+    for &child_id in children {
+        let child = &captures[&child_id];
+        let cs = child.node.start_byte();
+        let ce = child.node.end_byte();
+
+        if cs > pos {
+            output.push(VisibleRange {
+                start_byte: pos,
+                end_byte: cs,
+                noloc: cap.noloc,
+            });
+        }
+        emit_ranges(child_id, captures, children_map, output);
+        pos = pos.max(ce);
+    }
+
+    if pos < end {
+        output.push(VisibleRange {
+            start_byte: pos,
+            end_byte: end,
+            noloc: cap.noloc,
+        });
+    }
 }
