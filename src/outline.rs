@@ -3,44 +3,62 @@ use std::io::{self, Write};
 use streaming_iterator::StreamingIterator;
 use tree_sitter::{Language, Parser, Query, QueryCursor};
 
-pub struct OutlineEntry {
-    pub ranges: Vec<(usize, usize)>,
-    pub start_line: usize,
-    pub end_line: usize,
+pub struct VisibleRange {
+    pub start_byte: usize,
+    pub end_byte: usize,
     pub noloc: bool,
 }
 
-impl OutlineEntry {
-    pub fn write_to(&self, source: &str, w: &mut impl Write) -> io::Result<()> {
-        let mut first = true;
-        for &(s, e) in &self.ranges {
-            for line in source[s..e].lines() {
-                let trimmed = line.trim_end();
-                if trimmed.is_empty() {
-                    continue;
-                }
-                if !first {
-                    writeln!(w)?;
-                }
-                write!(w, "{}", trimmed)?;
-                first = false;
-            }
+pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mut impl Write) -> io::Result<()> {
+    // Pre-compute line starts for byte→line lookup
+    let line_starts: Vec<usize> = std::iter::once(0)
+        .chain(source.bytes().enumerate().filter_map(|(i, b)| if b == b'\n' { Some(i + 1) } else { None }))
+        .collect();
+    let byte_to_line = |byte: usize| -> usize {
+        line_starts.partition_point(|&start| start <= byte)
+    };
+
+    let mut prev_line: Option<usize> = None;
+
+    for range in ranges {
+        let text = source[range.start_byte..range.end_byte].trim_end();
+        if text.is_empty() {
+            continue;
         }
-        Ok(())
+
+        let start_line = byte_to_line(range.start_byte);
+
+        if let Some(prev) = prev_line {
+            if start_line > prev {
+                writeln!(w)?;
+                write!(w, "{}", prefix)?;
+            }
+        } else {
+            write!(w, "{}", prefix)?;
+        }
+
+        write!(w, "{}", text)?;
+
+        // Track the line of the last byte of visible text
+        let last_byte = range.start_byte + text.len();
+        prev_line = Some(byte_to_line(last_byte.saturating_sub(1)));
     }
+
+    if prev_line.is_some() {
+        writeln!(w)?;
+    }
+
+    Ok(())
 }
 
 struct ShowNode {
     start_byte: usize,
     end_byte: usize,
-    start_line: usize,
-    end_line: usize,
     hide_ranges: Vec<(usize, usize)>,
-    append_range: Option<(usize, usize)>,
-    show: bool,      // emit as entry
+    show: bool,
     noloc: bool,
-    show_after: bool, // toggle: make subsequent siblings visible
-    hide_after: bool, // toggle: make subsequent siblings hidden
+    show_after: bool,
+    hide_after: bool,
     show_if_ref: bool,
     referenced: bool,
     name: Option<String>,
@@ -61,10 +79,7 @@ fn parse_capture(name: &str, node: &tree_sitter::Node) -> Option<ShowNode> {
     Some(ShowNode {
         start_byte: node.start_byte(),
         end_byte: node.end_byte(),
-        start_line: node.start_position().row + 1,
-        end_line: node.end_position().row + 1,
         hide_ranges: Vec::new(),
-        append_range: None,
         show: is_show || is_show_if_ref,
         noloc: parts.contains("noloc"),
         show_after: is_show_after,
@@ -100,7 +115,7 @@ fn visible_ranges(node: &ShowNode) -> Vec<(usize, usize)> {
     ranges
 }
 
-pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<OutlineEntry> {
+pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<VisibleRange> {
     let mut parser = Parser::new();
     parser
         .set_language(&language)
@@ -125,7 +140,6 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
     let mut show_nodes: BTreeMap<usize, ShowNode> = BTreeMap::new();
     let mut show_node_ids: HashMap<usize, usize> = HashMap::new();
     let mut orphan_hide_nodes: Vec<tree_sitter::Node> = Vec::new();
-    let mut append_ranges: Vec<(Option<usize>, usize, usize)> = Vec::new();
     let mut ref_texts: Vec<String> = Vec::new();
 
     while let Some(m) = matches.next() {
@@ -133,7 +147,6 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
         let mut match_hide_nodes: Vec<tree_sitter::Node> = Vec::new();
         let mut match_name: Option<String> = None;
         let mut last_show_key: Option<usize> = None;
-        let mut appended = false;
 
         for cap in m.captures {
             let capture_name: &str = &query.capture_names()[cap.index as usize];
@@ -141,14 +154,6 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
 
             if capture_name == "hide" {
                 match_hide_nodes.push(node);
-                continue;
-            }
-
-            if capture_name == "append" {
-                if !appended {
-                    append_ranges.push((last_show_key, node.start_byte(), node.end_byte()));
-                    appended = true;
-                }
                 continue;
             }
 
@@ -231,32 +236,23 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
         }
     }
 
-    // Assign @append ranges to their show nodes
-    for (key, start, end) in &append_ranges {
-        if let Some(key) = key {
-            if let Some(node) = show_nodes.get_mut(key) {
-                node.append_range = Some((*start, *end));
-            }
-        }
-    }
-
-    // Walk the AST tree to build output, using tree structure for sibling scoping
-    let mut entries = Vec::new();
-    collect_entries(
+    // Walk the AST tree to collect visible ranges
+    let mut ranges = Vec::new();
+    collect_ranges(
         tree.root_node(),
         &show_node_ids,
         &show_nodes,
-        &mut entries,
+        &mut ranges,
     );
 
-    entries
+    ranges
 }
 
-fn collect_entries(
+fn collect_ranges(
     parent: tree_sitter::Node,
     show_node_ids: &HashMap<usize, usize>,
     show_nodes: &BTreeMap<usize, ShowNode>,
-    entries: &mut Vec<OutlineEntry>,
+    ranges: &mut Vec<VisibleRange>,
 ) {
     let mut hidden = false;
 
@@ -277,21 +273,18 @@ fn collect_entries(
                     && !hidden;
 
                 if should_emit {
-                    let mut ranges = visible_ranges(node);
-                    if let Some(append) = node.append_range {
-                        ranges.push(append);
+                    for (s, e) in visible_ranges(node) {
+                        ranges.push(VisibleRange {
+                            start_byte: s,
+                            end_byte: e,
+                            noloc: node.noloc,
+                        });
                     }
-                    entries.push(OutlineEntry {
-                        ranges,
-                        start_line: node.start_line,
-                        end_line: node.end_line,
-                        noloc: node.noloc,
-                    });
                 }
             }
         }
 
         // Recurse to find deeper captures
-        collect_entries(child, show_node_ids, show_nodes, entries);
+        collect_ranges(child, show_node_ids, show_nodes, ranges);
     }
 }

@@ -1,11 +1,10 @@
 mod outline;
 
 use std::fs;
-use std::io::Write;
 use std::path::Path;
 use tree_sitter::Language;
 
-use outline::{OutlineEntry, extract_outline};
+use outline::{extract_outline, write_outline};
 
 fn lang_for_ext(ext: &str) -> Option<(Language, &'static str)> {
     Some(match ext {
@@ -69,21 +68,9 @@ fn lang_for_ext(ext: &str) -> Option<(Language, &'static str)> {
     })
 }
 
-fn print_entries(source: &str, entries: &[OutlineEntry], prefix: &str) {
+fn print_outline(source: &str, ranges: &[outline::VisibleRange], prefix: &str) {
     let mut out = std::io::stdout().lock();
-    for entry in entries {
-        let _ = write!(out, "{}", prefix);
-        let _ = entry.write_to(source, &mut out);
-        if entry.start_line > 0 && !entry.noloc {
-            if entry.end_line > entry.start_line {
-                let _ = writeln!(out, " // L{}-L{}", entry.start_line, entry.end_line);
-            } else {
-                let _ = writeln!(out, " // L{}", entry.start_line);
-            }
-        } else {
-            let _ = writeln!(out);
-        }
-    }
+    let _ = write_outline(source, ranges, prefix, &mut out);
 }
 
 fn view_file(path: &Path) {
@@ -94,8 +81,8 @@ fn view_file(path: &Path) {
                 eprintln!("zat: {}: {}", path.display(), e);
                 std::process::exit(1);
             });
-            let entries = extract_outline(&source, language, query_src);
-            print_entries(&source, &entries, "");
+            let ranges = extract_outline(&source, language, query_src);
+            print_outline(&source, &ranges, "");
         }
         None => eprintln!("zat: {}: unknown file type", path.display()),
     }
