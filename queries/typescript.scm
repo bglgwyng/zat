@@ -18,7 +18,8 @@
               (member_expression) (subscript_expression) (identifier)
               (binary_expression) (unary_expression) (parenthesized_expression)
               (template_string) (class) (satisfies_expression)
-              (as_expression) (non_null_expression)] @hide)) @show)
+              (as_expression) (non_null_expression)] @hide)
+    ";" @hide) @show)
 
 ; Exported variable/const (typed, hide = value)
 (export_statement
@@ -26,7 +27,8 @@
     (variable_declarator
       type: (type_annotation)
       "=" @hide
-      value: (_) @hide)) @show)
+      value: (_) @hide)
+    ";" @hide) @show)
 
 ; Exported variable/const (fallback - keeps literal values)
 (export_statement

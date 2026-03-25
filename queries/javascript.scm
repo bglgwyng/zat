@@ -17,7 +17,8 @@
               (call_expression) (new_expression) (await_expression)
               (member_expression) (subscript_expression) (identifier)
               (binary_expression) (unary_expression) (parenthesized_expression)
-              (template_string) (class)] @hide)) @show)
+              (template_string) (class)] @hide)
+    ";" @hide) @show)
 
 ; Exported variable/const (fallback - keeps literal values)
 (export_statement
