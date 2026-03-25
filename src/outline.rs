@@ -19,6 +19,10 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
     };
 
     let mut prev_line: Option<usize> = None;
+    // Track line number range for the current output line
+    let mut line_start_num: usize = 0;
+    let mut line_end_num: usize = 0;
+    let mut line_has_loc = false;
 
     for range in ranges {
         let text = source[range.start_byte..range.end_byte].trim_end();
@@ -30,7 +34,15 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
         let new_line = prev_line.map_or(true, |prev| start_line > prev);
 
         if new_line {
+            // Emit line number annotation for the previous output line
             if prev_line.is_some() {
+                if line_has_loc {
+                    if line_end_num > line_start_num {
+                        write!(w, " // L{}-L{}", line_start_num, line_end_num)?;
+                    } else {
+                        write!(w, " // L{}", line_start_num)?;
+                    }
+                }
                 writeln!(w)?;
             }
             // Compute source line indent
@@ -39,15 +51,33 @@ pub fn write_outline(source: &str, ranges: &[VisibleRange], prefix: &str, w: &mu
             let indent_len = line_text.len() - line_text.trim_start().len();
             write!(w, "{}{}", prefix, &source[line_start..line_start + indent_len])?;
             write!(w, "{}", text.trim_start())?;
+            line_start_num = start_line;
+            line_end_num = start_line;
+            line_has_loc = !range.noloc;
         } else {
             write!(w, "{}", text)?;
         }
 
+        if !range.noloc {
+            line_has_loc = true;
+        }
         let last_byte = range.start_byte + text.len();
-        prev_line = Some(byte_to_line(last_byte.saturating_sub(1)));
+        let end_line = byte_to_line(last_byte.saturating_sub(1));
+        if end_line > line_end_num {
+            line_end_num = end_line;
+        }
+        prev_line = Some(end_line);
     }
 
+    // Emit annotation for the last output line
     if prev_line.is_some() {
+        if line_has_loc {
+            if line_end_num > line_start_num {
+                write!(w, " // L{}-L{}", line_start_num, line_end_num)?;
+            } else {
+                write!(w, " // L{}", line_start_num)?;
+            }
+        }
         writeln!(w)?;
     }
 

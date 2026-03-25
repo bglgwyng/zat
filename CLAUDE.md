@@ -24,16 +24,13 @@ Tag with `v*` triggers `.github/workflows/release.yml` which:
 
 - **`src/main.rs`**: Entry point. Handles file vs directory dispatch, extension→language mapping, and `cat -n` fallback. All tree-sitter queries are `include_str!`'d at compile time.
 
-- **`src/outline.rs`**: Core outline extraction engine. Takes source code, a tree-sitter `Language`, and a query string; returns `Vec<OutlineEntry>`. Processes tree-sitter captures (`@show`, `@hide`, `@strip`, etc.) to produce the outline.
+- **`src/outline.rs`**: Core outline extraction engine. Takes source code, a tree-sitter `Language`, and a query string; returns `Vec<VisibleRange>`. Uses `node.parent()` to assign `@hide` ranges to their containing `@show` nodes, then walks the AST tree to collect visible byte ranges.
 
 - **`queries/*.scm`**: Tree-sitter query files per language. These define what appears in outlines using a capture-based system:
-  - `@show` — top-level symbol to display
-  - `@show.indented` / `@show.indent` — child member (e.g. struct field, method)
-  - `@hide` — body/initializer to omit (shows first line only, plus closing delimiter)
-  - `@strip` — token to remove from output (e.g. `pub`, `export`)
+  - `@show` — symbol to display (source indentation is preserved automatically)
+  - `@hide` — range to omit within a `@show` node (e.g. function body, `pub` modifier)
   - `@show_if_ref` / `@name` / `@ref` — conditional display for re-exported symbols
-  - `@show_after` / `@hide_after` — visibility toggles within a block
-  - `@append` — attach adjacent text to the show node
+  - `@show_after` / `@hide_after` — sibling visibility toggles (e.g. C++ access specifiers)
   - `.noloc` modifier — suppress line numbers
 
 - **`flake.nix`**: Nix build config using `rustPlatform.buildRustPackage` with `rust-overlay`.

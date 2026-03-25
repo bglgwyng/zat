@@ -33,9 +33,9 @@
 
 ; Public/protected access specifier: show label and enable members after
 (field_declaration_list
-  ((access_specifier) @show.indent.noloc.show_after
-    (#match? @show.indent.noloc.show_after "^(public|protected)$"))
-  . ":" @append)
+  ((access_specifier) @show.noloc.show_after
+    (#match? @show.noloc.show_after "^(public|protected)$"))
+  . ":" @show.noloc)
 
 ; Private: hide members after
 (field_declaration_list
