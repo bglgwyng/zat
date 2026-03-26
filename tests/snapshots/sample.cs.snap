@@ -1,3 +1,7 @@
+using System; // L1
+using System.Collections.Generic; // L2
+namespace Example // L4
+{
     class Service
     { // L6-L7
         string Name // L8
@@ -26,3 +30,4 @@
     { // L50-L51
         abstract void Run(); // L52
     }
+}

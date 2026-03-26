@@ -1,3 +1,23 @@
+; Using directives
+(using_directive) @show
+
+; Namespace
+(namespace_declaration
+  body: (declaration_list) @hide) @show
+
+; Namespace braces
+(namespace_declaration
+  body: (declaration_list
+    "{" @show.noloc))
+(namespace_declaration
+  body: (declaration_list
+    "}" @show.noloc))
+
+; Namespace members
+(namespace_declaration
+  body: (declaration_list
+    (_) @show))
+
 ; Class
 (class_declaration
   body: (declaration_list) @hide) @show
