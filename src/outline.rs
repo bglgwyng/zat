@@ -141,6 +141,7 @@ struct CaptureNode<'a> {
     hide_after: bool,
     referenced: bool,
     name: Option<String>,
+    children_ids: Vec<usize>,
 }
 
 pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<VisibleRange> {
@@ -214,6 +215,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
                 hide_after: is_hide_after,
                 referenced: false,
                 name: None,
+                children_ids: Vec::new(),
             });
         }
 
@@ -236,7 +238,6 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             .then(cb.node.end_byte().cmp(&ca.node.end_byte()))
     });
 
-    let mut children_map: HashMap<usize, Vec<usize>> = HashMap::new();
     let mut root_ids: Vec<usize> = Vec::new();
     let mut stack: Vec<usize> = Vec::new();
 
@@ -249,7 +250,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             stack.pop();
         }
         if let Some(&parent) = stack.last() {
-            children_map.entry(parent).or_default().push(id);
+            captures.get_mut(&parent).unwrap().children_ids.push(id);
         } else {
             root_ids.push(id);
         }
@@ -269,7 +270,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
     // Phase 4: Walk tree to generate visible ranges
     let mut ranges = Vec::new();
     for &id in &root_ids {
-        emit_ranges(id, source, &captures, &children_map, &mut ranges);
+        emit_ranges(id, source, &captures, &mut ranges);
     }
 
     ranges
@@ -279,21 +280,16 @@ fn emit_ranges(
     node_id: usize,
     source: &str,
     captures: &HashMap<usize, CaptureNode>,
-    children_map: &HashMap<usize, Vec<usize>>,
     output: &mut Vec<VisibleRange>,
 ) {
     let cap = &captures[&node_id];
-    let children = children_map
-        .get(&node_id)
-        .map(|v| v.as_slice())
-        .unwrap_or(&[]);
 
     // Hide node: recurse into children with sibling visibility toggle
     match cap.visibility {
         Some(Visibility::ShowIfRef) if !cap.referenced => return,
         Some(Visibility::Hide) => {
             let mut hidden = false;
-            for &child_id in children {
+            for &child_id in cap.children_ids.iter() {
                 let child = &captures[&child_id];
                 if child.show_after {
                     hidden = false;
@@ -302,7 +298,7 @@ fn emit_ranges(
                     hidden = true;
                 }
                 if !hidden {
-                    emit_ranges(child_id, source, captures, children_map, output);
+                    emit_ranges(child_id, source, captures, output);
                 }
             }
             return;
@@ -314,7 +310,7 @@ fn emit_ranges(
     let mut pos = cap.node.start_byte();
     let end = cap.node.end_byte();
 
-    for &child_id in children {
+    for &child_id in cap.children_ids.iter() {
         let child = &captures[&child_id];
         let cs = child.node.start_byte();
         let ce = child.node.end_byte();
@@ -341,7 +337,7 @@ fn emit_ranges(
                 });
             }
         }
-        emit_ranges(child_id, source, captures, children_map, output);
+        emit_ranges(child_id, source, captures, output);
         pos = pos.max(ce);
     }
 
