@@ -1,11 +1,13 @@
 typedef unsigned int uint; // L4
-struct Config // L6
+struct Config { // L6
     char *name;
     int value;
-enum Color // L11
+}
+enum Color { // L11
     RED
     GREEN
     BLUE
+}
 struct Node // L17
 void greet(const char *name) // L19
 int add(int a, int b) // L23
