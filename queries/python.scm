@@ -1,3 +1,7 @@
+; Imports
+(import_statement) @show
+(import_from_statement) @show
+
 ; Top-level functions
 (module
   (function_definition

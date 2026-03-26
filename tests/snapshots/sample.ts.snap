@@ -16,9 +16,10 @@ class Service { // L26
   constructor(name: string) // L30
   start(): void // L35
 }
-enum Color // L44
+enum Color { // L44
   Red = "red"
   Green = "green"
   Blue = "blue"
+}
 function main() // L50
 function helper() // L54

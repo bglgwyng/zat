@@ -161,5 +161,9 @@
 (object_type
   (method_signature) @show)
 
+; Enum braces
+(enum_body "{" @show.noloc)
+(enum_body "}" @show.noloc)
+
 ; Enum members
 (enum_assignment) @show.noloc
