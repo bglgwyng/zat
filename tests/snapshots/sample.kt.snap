@@ -1,0 +1,14 @@
+class Service(val name: String) // L3
+    var value: Int = 0
+    fun getName(): String // L7
+    companion object // L15
+object Singleton // L22
+    fun doWork() // L23
+enum class Color // L28
+    RED
+    GREEN
+    BLUE
+    fun label(): String // L33
+typealias Callback = (String) -> Unit // L38
+fun greet(name: String): String // L40
+val MAX_SIZE = 1024

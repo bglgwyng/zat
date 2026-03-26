@@ -1,0 +1,15 @@
+public class Service // L5
+    String name;
+    protected int value;
+    Service(String name) // L10
+    String getName() // L16
+    protected void reset() // L24
+public interface Reader // L29
+    int read(byte[] buffer); // L30
+    void close(); // L31
+public enum Color // L34
+    RED
+    GREEN
+    BLUE
+public abstract class Base // L40
+    public abstract void run(); // L41

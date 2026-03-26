@@ -1,0 +1,14 @@
+module Sample where
+greet :: String -> String // L5
+add :: Int -> Int -> Int // L8
+data Color
+  = Red
+  | Green
+  | Blue // L11-L14
+newtype Name = Name String // L16
+type Mapping = Map String String // L18
+class Printable a where
+  display :: a -> String // L20-L21
+  label :: a -> String // L22
+instance Printable Color where // L24-L25
+infixl 6 `add` // L30

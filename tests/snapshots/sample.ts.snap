@@ -1,0 +1,23 @@
+function greet(name: string): string // L3
+const MAX_SIZE = 1024; // L7
+const config // L9
+interface Reader { // L14
+  read(p: Uint8Array): number // L15
+  close(): void // L16
+}
+type Status = "active" | "inactive"; // L19
+type Config = { // L21
+  name: string
+  value: number
+}; // L24
+class Service { // L26
+  name: string // L27
+  constructor(name: string) // L30
+  start(): void // L35
+}
+enum Color // L44
+  Red = "red"
+  Green = "green"
+  Blue = "blue"
+function main() // L50
+function helper() // L54

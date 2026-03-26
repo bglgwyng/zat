@@ -1,0 +1,9 @@
+def greet(name: str) -> str: // L4-L5
+def add(a: int, b: int) -> int: // L7-L8
+MAX_SIZE = 1024 // L10
+class Config:
+    default_name = "untitled" // L12-L13
+    def __init__(self, name: str, value: int = 0): // L15-L16
+    def get_name(self) -> str: // L19-L20
+    def create(name: str) -> "Config": // L23-L24
+def decorated(x: int) -> int: // L27-L28

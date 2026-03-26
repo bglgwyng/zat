@@ -1,0 +1,10 @@
+function greet(name) // L3
+const MAX_SIZE = 1024; // L7
+const config // L9
+class Service { // L14
+  name
+  constructor(name) // L18
+  start() // L23
+}
+function main() // L32
+function helper() // L36

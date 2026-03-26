@@ -1,0 +1,17 @@
+namespace app // L4
+class Service // L6
+public:
+    Service(const std::string& name); // L8
+    std::string getName() const;
+protected:
+    void reset();
+struct Config // L19
+    std::string name;
+    int value;
+enum class Color // L24
+    Red
+    Green
+    Blue
+template <typename T> // L30
+T identity(T value) // L31
+void greet(const std::string& name) // L37

@@ -1,0 +1,10 @@
+module Animals // L1-L2
+    def bark // L3-L4
+    def self.species // L7-L8
+  end // L16-L17
+class Config
+  def initialize(name, value = 0) // L19-L21
+  def get_name // L25-L26
+  end // L27-L28
+def greet(name) // L30-L31
+MAX_SIZE = 1024 // L34
