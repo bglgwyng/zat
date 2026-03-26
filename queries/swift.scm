@@ -13,6 +13,18 @@
 (protocol_declaration
   body: (protocol_body) @hide) @show
 
+; Class/struct braces
+(class_body "{" @show.noloc)
+(class_body "}" @show.noloc)
+
+; Enum braces
+(enum_class_body "{" @show.noloc)
+(enum_class_body "}" @show.noloc)
+
+; Protocol braces
+(protocol_body "{" @show.noloc)
+(protocol_body "}" @show.noloc)
+
 ; Top-level functions
 (function_declaration
   body: (function_body) @hide) @show
