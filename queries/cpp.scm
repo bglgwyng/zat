@@ -1,3 +1,6 @@
+; Includes
+(preproc_include) @show
+
 ; Function definitions
 (function_definition
   body: (compound_statement) @hide) @show

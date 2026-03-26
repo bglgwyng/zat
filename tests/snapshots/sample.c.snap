@@ -1,3 +1,5 @@
+#include <stdio.h> // L1
+#include <stdlib.h> // L2
 typedef unsigned int uint; // L4
 struct Config { // L6
     char *name;
