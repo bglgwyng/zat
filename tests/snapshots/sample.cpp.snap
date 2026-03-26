@@ -1,6 +1,6 @@
 #include <string> // L1
 #include <vector> // L2
-namespace app // L4
+namespace app { // L4
 class Service { // L6
 public:
     Service(const std::string& name); // L8
@@ -18,4 +18,5 @@ enum class Color { // L24
 }
 template <typename T> // L30
 T identity(T value) // L31
+}
 void greet(const std::string& name) // L37

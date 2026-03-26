@@ -86,6 +86,14 @@
   name: (_)
   body: (declaration_list) @hide) @show
 
+; Namespace braces
+(namespace_definition
+  body: (declaration_list
+    "{" @show.noloc))
+(namespace_definition
+  body: (declaration_list
+    "}" @show.noloc))
+
 ; Declarations inside namespace
 (namespace_definition
   body: (declaration_list
