@@ -1,3 +1,6 @@
+; Use declarations
+(use_declaration) @show
+
 ; Public function
 (function_item
   (visibility_modifier) @hide
