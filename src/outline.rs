@@ -309,7 +309,8 @@ fn emit_ranges(
     }
 
     // Show node: emit own byte range minus children's ranges
-    let mut pos = cap.node.start_byte();
+    let mut pos = cap.node.start_position();
+    let mut start = cap.node.start_byte();
     let end = cap.node.end_byte();
 
     for &child_id in cap.children_ids.iter() {
@@ -317,35 +318,30 @@ fn emit_ranges(
         let cs = child.node.start_byte();
         let ce = child.node.end_byte();
 
-        if cs > pos {
-            // Trim trailing indentation after the last newline in the gap,
-            // so it doesn't merge with the next line's content.
-            let gap = &source[pos..cs];
-            let gap_end = if let Some(last_nl) = gap.rfind('\n') {
-                let after_nl = &gap[last_nl + 1..];
-                if after_nl.bytes().all(|b| b == b' ' || b == b'\t') {
-                    pos + last_nl + 1
-                } else {
-                    cs
-                }
+        if cs > start {
+            // Trim trailing indentation when child is on a different line
+            let child_pos = child.node.start_position();
+            let gap_end = if pos.row != child_pos.row {
+                cs - child_pos.column
             } else {
                 cs
             };
-            if gap_end > pos {
+            if gap_end > start {
                 output.push(VisibleRange {
-                    start_byte: pos,
+                    start_byte: start,
                     end_byte: gap_end,
                     noloc: cap.noloc,
                 });
             }
         }
         emit_ranges(child_id, source, captures, output);
-        pos = pos.max(ce);
+        start = ce;
+        pos = child.node.end_position();
     }
 
-    if pos < end {
+    if start < end {
         output.push(VisibleRange {
-            start_byte: pos,
+            start_byte: start,
             end_byte: end,
             noloc: cap.noloc,
         });
