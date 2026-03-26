@@ -19,6 +19,38 @@
   body: (declaration_list) @hide) @show
 (record_declaration) @show
 
+; Class braces
+(class_declaration
+  body: (declaration_list
+    "{" @show.noloc))
+(class_declaration
+  body: (declaration_list
+    "}" @show.noloc))
+
+; Interface braces
+(interface_declaration
+  body: (declaration_list
+    "{" @show.noloc))
+(interface_declaration
+  body: (declaration_list
+    "}" @show.noloc))
+
+; Struct braces
+(struct_declaration
+  body: (declaration_list
+    "{" @show.noloc))
+(struct_declaration
+  body: (declaration_list
+    "}" @show.noloc))
+
+; Enum braces
+(enum_declaration
+  body: (enum_member_declaration_list
+    "{" @show.noloc))
+(enum_declaration
+  body: (enum_member_declaration_list
+    "}" @show.noloc))
+
 ; Strip visibility/other modifiers from type declarations
 (class_declaration
   ((modifier) @hide
