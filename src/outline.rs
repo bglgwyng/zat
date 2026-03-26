@@ -236,6 +236,8 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             .start_byte()
             .cmp(&cb.node.start_byte())
             .then(cb.node.end_byte().cmp(&ca.node.end_byte()))
+            // Same byte range: more descendants = ancestor, should come first
+            .then(cb.node.descendant_count().cmp(&ca.node.descendant_count()))
     });
 
     let mut root_ids: Vec<usize> = Vec::new();
