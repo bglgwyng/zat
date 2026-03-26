@@ -1,3 +1,9 @@
+; Require statements
+(program
+  ((call
+    method: (identifier) @_method) @show
+    (#match? @_method "^require")))
+
 ; Class
 (class
   (body_statement) @hide) @show

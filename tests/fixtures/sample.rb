@@ -1,3 +1,6 @@
+require "json"
+require_relative "helper"
+
 module Animals
   class Dog
     def bark
