@@ -1,3 +1,4 @@
+import { EventEmitter } from "events"; // L1
 function greet(name) // L3
 const MAX_SIZE = 1024; // L7
 const config // L9

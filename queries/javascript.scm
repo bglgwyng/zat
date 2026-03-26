@@ -1,3 +1,6 @@
+; Imports
+(import_statement) @show
+
 ; Exported function
 (export_statement
   declaration: (function_declaration
