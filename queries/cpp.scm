@@ -27,6 +27,22 @@
 (struct_specifier
   name: (_)) @show
 
+; Class braces
+(class_specifier
+  body: (field_declaration_list
+    "{" @show.noloc))
+(class_specifier
+  body: (field_declaration_list
+    "}" @show.noloc))
+
+; Struct braces
+(struct_specifier
+  body: (field_declaration_list
+    "{" @show.noloc))
+(struct_specifier
+  body: (field_declaration_list
+    "}" @show.noloc))
+
 ; Fields inside class/struct
 (field_declaration) @show.noloc
 
@@ -53,6 +69,14 @@
 ; Enum forward declaration
 (enum_specifier
   name: (_)) @show
+
+; Enum braces
+(enum_specifier
+  body: (enumerator_list
+    "{" @show.noloc))
+(enum_specifier
+  body: (enumerator_list
+    "}" @show.noloc))
 
 ; Enum values
 (enumerator) @show.noloc
