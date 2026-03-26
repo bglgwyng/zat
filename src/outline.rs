@@ -59,7 +59,10 @@ pub fn write_outline(
             continue;
         }
 
-        let start_line = byte_to_line(range.start_byte);
+        // Skip leading whitespace/newlines to find actual content start
+        let trimmed_offset = text.len() - text.trim_start().len();
+        let content_start_byte = range.start_byte + trimmed_offset;
+        let start_line = byte_to_line(content_start_byte);
         let new_line = prev_line.map_or(true, |prev| start_line > prev);
 
         if new_line {
@@ -179,28 +182,14 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
                 continue;
             }
 
-            if capture_name == "hide" {
-                captures.entry(node.id()).or_insert(CaptureNode {
-                    node,
-                    is_show: false,
-                    is_hide: true,
-                    noloc: false,
-                    show_after: false,
-                    hide_after: false,
-                    show_if_ref: false,
-                    referenced: false,
-                    name: None,
-                });
-                continue;
-            }
-
             let parts: std::collections::HashSet<&str> = capture_name.split('.').collect();
             let is_show = parts.contains("show");
+            let is_hide = parts.contains("hide");
             let is_show_if_ref = parts.contains("show_if_ref");
             let is_show_after = parts.contains("show_after");
             let is_hide_after = parts.contains("hide_after");
 
-            if !is_show && !is_show_if_ref && !is_show_after && !is_hide_after {
+            if !is_show && !is_hide && !is_show_if_ref && !is_show_after && !is_hide_after {
                 continue;
             }
 
@@ -211,7 +200,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             captures.entry(node.id()).or_insert(CaptureNode {
                 node,
                 is_show: is_show || is_show_if_ref,
-                is_hide: false,
+                is_hide,
                 noloc: parts.contains("noloc"),
                 show_after: is_show_after,
                 hide_after: is_hide_after,
@@ -273,7 +262,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
     // Phase 4: Walk tree to generate visible ranges
     let mut ranges = Vec::new();
     for &id in &root_ids {
-        emit_ranges(id, &captures, &children_map, &mut ranges);
+        emit_ranges(id, source, &captures, &children_map, &mut ranges);
     }
 
     ranges
@@ -281,6 +270,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
 
 fn emit_ranges(
     node_id: usize,
+    source: &str,
     captures: &HashMap<usize, CaptureNode>,
     children_map: &HashMap<usize, Vec<usize>>,
     output: &mut Vec<VisibleRange>,
@@ -303,7 +293,7 @@ fn emit_ranges(
                 hidden = true;
             }
             if !hidden {
-                emit_ranges(child_id, captures, children_map, output);
+                emit_ranges(child_id, source, captures, children_map, output);
             }
         }
         return;
@@ -329,13 +319,28 @@ fn emit_ranges(
         let ce = child.node.end_byte();
 
         if cs > pos {
-            output.push(VisibleRange {
-                start_byte: pos,
-                end_byte: cs,
-                noloc: cap.noloc,
-            });
+            // Trim trailing indentation after the last newline in the gap,
+            // so it doesn't merge with the next line's content.
+            let gap = &source[pos..cs];
+            let gap_end = if let Some(last_nl) = gap.rfind('\n') {
+                let after_nl = &gap[last_nl + 1..];
+                if after_nl.bytes().all(|b| b == b' ' || b == b'\t') {
+                    pos + last_nl + 1
+                } else {
+                    cs
+                }
+            } else {
+                cs
+            };
+            if gap_end > pos {
+                output.push(VisibleRange {
+                    start_byte: pos,
+                    end_byte: gap_end,
+                    noloc: cap.noloc,
+                });
+            }
         }
-        emit_ranges(child_id, captures, children_map, output);
+        emit_ranges(child_id, source, captures, children_map, output);
         pos = pos.max(ce);
     }
 

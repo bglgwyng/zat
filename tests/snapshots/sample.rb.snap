@@ -1,14 +1,14 @@
 require "json" // L1
 require_relative "helper" // L2
-module Animals
-  class Dog
-    def bark // L4-L7
-    def self.species // L10-L11
-    end
-end // L18-L20
-class Config
-  def initialize(name, value = 0) // L22-L24
-  def get_name // L28-L29
-  end // L30-L31
-def greet(name) // L33-L34
+module Animals // L4
+  class Dog // L5
+    def bark // L6
+    def self.species // L10
+  end // L19
+end // L20
+class Config // L22
+  def initialize(name, value = 0) // L23
+  def get_name // L28
+end // L31
+def greet(name) // L33
 MAX_SIZE = 1024 // L37
