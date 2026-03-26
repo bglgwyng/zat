@@ -1,7 +1,14 @@
 use std::collections::HashMap;
 use std::io::{self, Write};
+use std::panic;
 use streaming_iterator::StreamingIterator;
 use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
+
+enum Visibility {
+    Show,
+    Hide,
+    ShowIfRef,
+}
 
 pub struct VisibleRange {
     pub start_byte: usize,
@@ -128,12 +135,10 @@ pub fn write_outline(
 
 struct CaptureNode<'a> {
     node: Node<'a>,
-    is_show: bool,
-    is_hide: bool,
+    visibility: Option<Visibility>,
     noloc: bool,
     show_after: bool,
     hide_after: bool,
-    show_if_ref: bool,
     referenced: bool,
     name: Option<String>,
 }
@@ -183,28 +188,30 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             }
 
             let parts: std::collections::HashSet<&str> = capture_name.split('.').collect();
-            let is_show = parts.contains("show");
-            let is_hide = parts.contains("hide");
-            let is_show_if_ref = parts.contains("show_if_ref");
-            let is_show_after = parts.contains("show_after");
-            let is_hide_after = parts.contains("hide_after");
-
-            if !is_show && !is_hide && !is_show_if_ref && !is_show_after && !is_hide_after {
+            if (parts.is_empty()) {
                 continue;
             }
 
-            if is_show_if_ref {
+            let visibility = if parts.contains("show") {
+                Some(Visibility::Show)
+            } else if parts.contains("show_if_ref") {
                 match_show_if_ref_id = Some(node.id());
-            }
+                Some(Visibility::ShowIfRef)
+            } else if parts.contains("hide") {
+                Some(Visibility::Hide)
+            } else {
+                None
+            };
+
+            let is_show_after = parts.contains("show_after");
+            let is_hide_after = parts.contains("hide_after");
 
             captures.entry(node.id()).or_insert(CaptureNode {
                 node,
-                is_show: is_show || is_show_if_ref,
-                is_hide,
+                visibility,
                 noloc: parts.contains("noloc"),
                 show_after: is_show_after,
                 hide_after: is_hide_after,
-                show_if_ref: is_show_if_ref,
                 referenced: false,
                 name: None,
             });
@@ -282,31 +289,25 @@ fn emit_ranges(
         .unwrap_or(&[]);
 
     // Hide node: recurse into children with sibling visibility toggle
-    if cap.is_hide {
-        let mut hidden = false;
-        for &child_id in children {
-            let child = &captures[&child_id];
-            if child.show_after {
-                hidden = false;
+    match cap.visibility {
+        Some(Visibility::ShowIfRef) if !cap.referenced => return,
+        Some(Visibility::Hide) => {
+            let mut hidden = false;
+            for &child_id in children {
+                let child = &captures[&child_id];
+                if child.show_after {
+                    hidden = false;
+                }
+                if child.hide_after {
+                    hidden = true;
+                }
+                if !hidden {
+                    emit_ranges(child_id, source, captures, children_map, output);
+                }
             }
-            if child.hide_after {
-                hidden = true;
-            }
-            if !hidden {
-                emit_ranges(child_id, source, captures, children_map, output);
-            }
+            return;
         }
-        return;
-    }
-
-    // Toggle-only node (show_after/hide_after without show): nothing to emit
-    if !cap.is_show {
-        return;
-    }
-
-    // Unreferenced show_if_ref: skip
-    if cap.show_if_ref && !cap.referenced {
-        return;
+        _ => {}
     }
 
     // Show node: emit own byte range minus children's ranges
