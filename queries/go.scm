@@ -20,8 +20,22 @@
 ; Other type declarations
 (type_declaration) @show
 
+; Struct braces
+(struct_type
+  (field_declaration_list
+    "{" @show.noloc))
+(struct_type
+  (field_declaration_list
+    "}" @show.noloc))
+
 ; Struct fields
 (field_declaration) @show.noloc
+
+; Interface braces
+(interface_type
+  "{" @show.noloc)
+(interface_type
+  "}" @show.noloc)
 
 ; Interface methods
 (method_elem) @show.noloc
