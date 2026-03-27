@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::io::{self, Write};
-use std::panic;
 use streaming_iterator::StreamingIterator;
 use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
 
@@ -189,7 +188,7 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
             }
 
             let parts: std::collections::HashSet<&str> = capture_name.split('.').collect();
-            if (parts.is_empty()) {
+            if parts.is_empty() {
                 continue;
             }
 
