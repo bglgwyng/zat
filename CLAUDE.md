@@ -6,11 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `zat` is a single Rust binary that shows code outlines (exported symbols with line numbers) for 13 languages. For directories, it finds entry files and shows their outlines alongside a file listing.
 
-## Build
+## Build & Test
 
 ```bash
+cargo build                  # Dev build
+cargo build --release        # Release build
 nix build                    # Build via Nix (uses flake.nix + buildRustPackage)
-cargo build --release        # Build directly with Cargo
+cargo test                   # Run all snapshot tests
+cargo test test_rust         # Run a single language test
 ```
 
 ## Release
@@ -33,4 +36,18 @@ Tag with `v*` triggers `.github/workflows/release.yml` which:
   - `@show_after` / `@hide_after` — sibling visibility toggles (e.g. C++ access specifiers)
   - `.noloc` modifier — suppress line numbers
 
+- **`src/lib.rs`**: `lang_for_ext()` maps file extensions to `(Language, query_src)` pairs. This is the central registry for supported languages.
+
 - **`flake.nix`**: Nix build config using `rustPlatform.buildRustPackage` with `rust-overlay`.
+
+## Testing
+
+Tests are snapshot-based. Each language has a fixture (`tests/fixtures/sample.{ext}`) and a snapshot (`tests/snapshots/sample.{ext}.snap`). The test runs the outline extractor on the fixture and compares output to the snapshot. To update a snapshot after changing a query, run the outline on the fixture and write the output to the snapshot file.
+
+## Adding a Language
+
+1. Add `tree-sitter-{lang}` dependency to `Cargo.toml`
+2. Create `queries/{lang}.scm` with `@show`/`@hide` captures
+3. Add extension mapping in `src/lib.rs` (`lang_for_ext`)
+4. Add test fixture `tests/fixtures/sample.{ext}` and snapshot `tests/snapshots/sample.{ext}.snap`
+5. Add test function in `tests/outline_test.rs`
