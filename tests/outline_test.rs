@@ -1,3 +1,4 @@
+use pretty_assertions::assert_eq;
 use std::fs;
 use zat::lang_for_ext;
 use zat::outline::{extract_outline, parse, write_outline};
