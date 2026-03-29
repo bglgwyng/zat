@@ -88,3 +88,8 @@ fn test_kotlin() {
 fn test_ruby() {
     assert_snapshot("rb");
 }
+
+#[test]
+fn test_markdown() {
+    assert_snapshot("md");
+}

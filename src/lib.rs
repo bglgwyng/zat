@@ -60,6 +60,10 @@ pub fn lang_for_ext(ext: &str) -> Option<(Language, &'static str)> {
             tree_sitter_ruby::LANGUAGE.into(),
             include_str!("../queries/ruby.scm"),
         ),
+        "md" | "markdown" => (
+            tree_sitter_md::LANGUAGE.into(),
+            include_str!("../queries/markdown.scm"),
+        ),
         _ => return None,
     })
 }
