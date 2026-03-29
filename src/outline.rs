@@ -187,6 +187,10 @@ pub fn extract_outline<'a>(
             let node = cap.node;
 
             if capture_name == "name" {
+                assert!(
+                    match_name.is_none(),
+                    "multiple @name captures in one pattern"
+                );
                 match_name = Some(source[node.byte_range()].trim().to_string());
                 continue;
             }
@@ -204,6 +208,10 @@ pub fn extract_outline<'a>(
             let visibility = if parts.contains("show") {
                 Some(Visibility::Show)
             } else if parts.contains("show_if_ref") {
+                assert!(
+                    match_show_if_ref_id.is_none(),
+                    "multiple @show_if_ref captures in one pattern"
+                );
                 match_show_if_ref_id = Some(node.id());
                 Some(Visibility::ShowIfRef)
             } else if parts.contains("hide") {
@@ -228,10 +236,12 @@ pub fn extract_outline<'a>(
         }
 
         if let Some(name) = match_name {
-            if let Some(id) = match_show_if_ref_id {
-                if let Some(cap) = captures.get_mut(&id) {
-                    cap.name = Some(name);
-                }
+            let id = match_show_if_ref_id.expect(
+                "@name capture requires a corresponding @show_if_ref capture in the same pattern",
+            );
+
+            if let Some(cap) = captures.get_mut(&id) {
+                cap.name = Some(name);
             }
         }
     }
