@@ -280,7 +280,7 @@ pub fn extract_outline<'a>(
     // Phase 4: Walk tree to generate visible ranges
     let mut ranges = Vec::new();
     for &id in &root_ids {
-        emit_ranges(id, source, &captures, &mut ranges);
+        emit_ranges(id, &captures, &mut ranges);
     }
 
     ranges
@@ -288,7 +288,6 @@ pub fn extract_outline<'a>(
 
 fn emit_ranges<'a>(
     node_id: usize,
-    source: &str,
     captures: &HashMap<usize, CaptureNode<'a>>,
     output: &mut Vec<VisibleRange<'a>>,
 ) {
@@ -308,7 +307,7 @@ fn emit_ranges<'a>(
                     hidden = true;
                 }
                 if !hidden {
-                    emit_ranges(child_id, source, captures, output);
+                    emit_ranges(child_id, captures, output);
                 }
             }
             return;
@@ -335,7 +334,7 @@ fn emit_ranges<'a>(
                 noloc: cap.noloc,
             });
         }
-        emit_ranges(child_id, source, captures, output);
+        emit_ranges(child_id, captures, output);
         start = ce;
         row = child.node.end_position().row;
     }
