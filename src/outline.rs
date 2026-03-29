@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{self, Write};
 use streaming_iterator::StreamingIterator;
-use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
+use tree_sitter::{Language, Node, Parser, Query, QueryCursor, Tree};
 
 enum Visibility {
     Show,
@@ -9,30 +9,42 @@ enum Visibility {
     ShowIfRef,
 }
 
-pub struct VisibleRange {
+pub struct VisibleRange<'a> {
+    pub node: Node<'a>,
     pub start_byte: usize,
     pub end_byte: usize,
+    pub start_row: usize,
     pub noloc: bool,
+}
+
+/// Walk up then left to find the line's leading whitespace extent.
+fn get_indent(node: &Node) -> (usize, usize) {
+    let row = node.start_position().row;
+    let mut current = *node;
+    while let Some(parent) = current.parent() {
+        if parent.start_position().row != row {
+            break;
+        }
+        current = parent;
+    }
+    while let Some(prev) = current.prev_sibling() {
+        if prev.start_position().row != row {
+            break;
+        }
+        current = prev;
+    }
+    let col = current.start_position().column;
+    let line_start = current.start_byte() - col;
+    (line_start, col)
 }
 
 pub fn write_outline(
     source: &str,
-    ranges: &[VisibleRange],
+    ranges: &[VisibleRange<'_>],
     prefix: &str,
     w: &mut impl Write,
 ) -> io::Result<()> {
-    let line_starts: Vec<usize> = std::iter::once(0)
-        .chain(
-            source
-                .bytes()
-                .enumerate()
-                .filter_map(|(i, b)| if b == b'\n' { Some(i + 1) } else { None }),
-        )
-        .collect();
-    let byte_to_line =
-        |byte: usize| -> usize { line_starts.partition_point(|&start| start <= byte) };
-
-    let mut prev_line: Option<usize> = None;
+    let mut prev_row: Option<usize> = None;
     let mut prev_end_byte: usize = 0;
     let mut line_buf = String::new();
     let mut line_start_num: usize = 0;
@@ -65,14 +77,16 @@ pub fn write_outline(
             continue;
         }
 
-        // Skip leading whitespace/newlines to find actual content start
-        let trimmed_offset = text.len() - text.trim_start().len();
-        let content_start_byte = range.start_byte + trimmed_offset;
-        let start_line = byte_to_line(content_start_byte);
-        let new_line = prev_line.map_or(true, |prev| start_line > prev);
+        let leading_newlines = text
+            .bytes()
+            .take_while(|b| b.is_ascii_whitespace())
+            .filter(|&b| b == b'\n')
+            .count();
+        let content_row = range.start_row + leading_newlines;
+        let new_line = prev_row.map_or(true, |prev| content_row > prev);
 
         if new_line {
-            if prev_line.is_some() {
+            if prev_row.is_some() {
                 flush_line(
                     &mut line_buf,
                     &mut (w as &mut dyn Write),
@@ -81,18 +95,12 @@ pub fn write_outline(
                     line_end_num,
                 )?;
             }
-            let line_start = if start_line > 1 {
-                line_starts[start_line - 1]
-            } else {
-                0
-            };
-            let line_text = &source[line_start..];
-            let indent_len = line_text.len() - line_text.trim_start().len();
+            let (indent_byte, indent_len) = get_indent(&range.node);
             line_buf.push_str(prefix);
-            line_buf.push_str(&source[line_start..line_start + indent_len]);
+            line_buf.push_str(&source[indent_byte..indent_byte + indent_len]);
             line_buf.push_str(text.trim_start());
-            line_start_num = start_line;
-            line_end_num = start_line;
+            line_start_num = content_row + 1;
+            line_end_num = content_row + 1;
             line_has_loc = !range.noloc;
         } else {
             if range.start_byte > prev_end_byte {
@@ -108,25 +116,23 @@ pub fn write_outline(
             line_has_loc = true;
         }
         prev_end_byte = range.end_byte;
-        let last_byte = range.start_byte + text.len();
-        let end_line = byte_to_line(last_byte.saturating_sub(1));
+        let content_newlines = text.trim().bytes().filter(|&b| b == b'\n').count();
+        let end_row = content_row + content_newlines;
+        let end_line = end_row + 1;
         if end_line > line_end_num {
             line_end_num = end_line;
         }
-        prev_line = Some(end_line);
+        prev_row = Some(end_row);
     }
 
-    if prev_line.is_some() {
-        let trimmed = line_buf.trim_end();
-        write!(w, "{}", trimmed)?;
-        if line_has_loc {
-            if line_end_num > line_start_num {
-                write!(w, " // L{}-L{}", line_start_num, line_end_num)?;
-            } else {
-                write!(w, " // L{}", line_start_num)?;
-            }
-        }
-        writeln!(w)?;
+    if prev_row.is_some() {
+        flush_line(
+            &mut line_buf,
+            &mut (w as &mut dyn Write),
+            line_has_loc,
+            line_start_num,
+            line_end_num,
+        )?;
     }
 
     Ok(())
@@ -143,18 +149,21 @@ struct CaptureNode<'a> {
     children_ids: Vec<usize>,
 }
 
-pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec<VisibleRange> {
+pub fn parse(source: &str, language: &Language) -> Option<Tree> {
     let mut parser = Parser::new();
     parser
-        .set_language(&language)
+        .set_language(language)
         .expect("Failed to set language");
+    parser.parse(source, None)
+}
 
-    let tree = match parser.parse(source, None) {
-        Some(t) => t,
-        None => return vec![],
-    };
-
-    let query = match Query::new(&language, query_src) {
+pub fn extract_outline<'a>(
+    source: &str,
+    tree: &'a Tree,
+    language: &Language,
+    query_src: &str,
+) -> Vec<VisibleRange<'a>> {
+    let query = match Query::new(language, query_src) {
         Ok(q) => q,
         Err(e) => {
             eprintln!("Query error: {}", e);
@@ -277,11 +286,11 @@ pub fn extract_outline(source: &str, language: Language, query_src: &str) -> Vec
     ranges
 }
 
-fn emit_ranges(
+fn emit_ranges<'a>(
     node_id: usize,
     source: &str,
-    captures: &HashMap<usize, CaptureNode>,
-    output: &mut Vec<VisibleRange>,
+    captures: &HashMap<usize, CaptureNode<'a>>,
+    output: &mut Vec<VisibleRange<'a>>,
 ) {
     let cap = &captures[&node_id];
 
@@ -308,7 +317,7 @@ fn emit_ranges(
     }
 
     // Show node: emit own byte range minus children's ranges
-    let mut pos = cap.node.start_position();
+    let mut row = cap.node.start_position().row;
     let mut start = cap.node.start_byte();
     let end = cap.node.end_byte();
 
@@ -318,30 +327,25 @@ fn emit_ranges(
         let ce = child.node.end_byte();
 
         if cs > start {
-            // Trim trailing indentation when child is on a different line
-            let child_pos = child.node.start_position();
-            let gap_end = if pos.row != child_pos.row {
-                cs - child_pos.column
-            } else {
-                cs
-            };
-            if gap_end > start {
-                output.push(VisibleRange {
-                    start_byte: start,
-                    end_byte: gap_end,
-                    noloc: cap.noloc,
-                });
-            }
+            output.push(VisibleRange {
+                node: cap.node,
+                start_byte: start,
+                end_byte: cs,
+                start_row: row,
+                noloc: cap.noloc,
+            });
         }
         emit_ranges(child_id, source, captures, output);
         start = ce;
-        pos = child.node.end_position();
+        row = child.node.end_position().row;
     }
 
     if start < end {
         output.push(VisibleRange {
+            node: cap.node,
             start_byte: start,
             end_byte: end,
+            start_row: row,
             noloc: cap.noloc,
         });
     }

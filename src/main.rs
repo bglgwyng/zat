@@ -6,7 +6,7 @@ use std::path::Path;
 use outline::write_outline;
 use zat::lang_for_ext;
 
-fn print_outline(source: &str, ranges: &[outline::VisibleRange], prefix: &str) {
+fn print_outline(source: &str, ranges: &[outline::VisibleRange<'_>], prefix: &str) {
     let mut out = std::io::stdout().lock();
     let _ = write_outline(source, ranges, prefix, &mut out);
 }
@@ -19,7 +19,11 @@ fn view_file(path: &Path) {
                 eprintln!("zat: {}: {}", path.display(), e);
                 std::process::exit(1);
             });
-            let ranges = outline::extract_outline(&source, language, query_src);
+            let tree = match outline::parse(&source, &language) {
+                Some(t) => t,
+                None => return,
+            };
+            let ranges = outline::extract_outline(&source, &tree, &language, query_src);
             print_outline(&source, &ranges, "");
         }
         None => eprintln!("zat: {}: unknown file type", path.display()),

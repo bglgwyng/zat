@@ -1,6 +1,6 @@
 use std::fs;
 use zat::lang_for_ext;
-use zat::outline::{extract_outline, write_outline};
+use zat::outline::{extract_outline, parse, write_outline};
 
 fn run_outline(ext: &str) -> String {
     let fixture_path = format!("tests/fixtures/sample.{ext}");
@@ -10,7 +10,8 @@ fn run_outline(ext: &str) -> String {
     let (language, query_src) =
         lang_for_ext(ext).unwrap_or_else(|| panic!("No language for extension: {ext}"));
 
-    let ranges = extract_outline(&source, language, query_src);
+    let tree = parse(&source, &language).expect("parse failed");
+    let ranges = extract_outline(&source, &tree, &language, query_src);
     let mut buf = Vec::new();
     write_outline(&source, &ranges, "", &mut buf).expect("write_outline failed");
     String::from_utf8(buf).expect("non-UTF8 output")
