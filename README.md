@@ -79,7 +79,6 @@ Only public/exported symbols are shown. Visibility modifiers (`pub`, `export`) a
 | Kotlin | `.kt`, `.kts` |
 | Haskell | `.hs` |
 | Ruby | `.rb` |
-| Other | Falls back to `cat -n` |
 
 All languages are parsed with [tree-sitter](https://tree-sitter.github.io/).
 
