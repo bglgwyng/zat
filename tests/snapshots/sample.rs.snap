@@ -1,25 +1,25 @@
 use std::collections::HashMap; // L1
-fn greet(name: &str) -> String // L3
-struct Config { // L11
+fn greet(name: &str) -> String // L3-L5
+struct Config { // L11-L15
     name: String
     value: i32
 }
-enum Color { // L17
+enum Color { // L17-L21
     Red
     Green
     Blue(u8, u8, u8)
 }
-trait Drawable { // L23
+trait Drawable { // L23-L26
     fn draw(&self); // L24
     fn visible(&self) -> bool; // L25
 }
-impl Config { // L28
-    fn new(name: String) -> Self // L29
-    fn get_name(&self) -> &str // L37
+impl Config { // L28-L42
+    fn new(name: String) -> Self // L29-L35
+    fn get_name(&self) -> &str // L37-L39
 }
 type Mapping = HashMap<String, String>; // L44
 const MAX_SIZE: usize = 1024; // L46
 static GLOBAL: &str = "hello"; // L48
-mod utils { // L50
-    fn parse(input: &str) -> Result<(), String> // L51
+mod utils { // L50-L54
+    fn parse(input: &str) -> Result<(), String> // L51-L53
 }

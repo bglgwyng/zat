@@ -1,11 +1,11 @@
 import { EventEmitter } from "events"; // L1
-function greet(name) // L3
+function greet(name) // L3-L5
 const MAX_SIZE = 1024; // L7
-const config // L9
-class Service { // L14
+const config // L9-L12
+class Service { // L14-L30
   name
-  constructor(name) // L18
-  start() // L23
+  constructor(name) // L18-L21
+  start() // L23-L25
 }
-function main() // L32
-function helper() // L36
+function main() // L32-L34
+function helper() // L36-L38

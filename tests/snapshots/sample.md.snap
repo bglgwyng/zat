@@ -1,10 +1,10 @@
-# Project Title // L1
-## Installation // L5
-### Prerequisites // L11
-## Usage // L16
-### API Reference // L23
-#### `foo(options)` // L25
-#### `bar(x, y)` // L29
-## Contributing // L33
-### Code Style // L37
-## License // L41
+# Project Title // L1-L2
+## Installation // L5-L6
+### Prerequisites // L11-L12
+## Usage // L16-L17
+### API Reference // L23-L24
+#### `foo(options)` // L25-L26
+#### `bar(x, y)` // L29-L30
+## Contributing // L33-L34
+### Code Style // L37-L38
+## License // L41-L42

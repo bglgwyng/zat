@@ -77,13 +77,7 @@ pub fn write_outline(
             continue;
         }
 
-        let leading_newlines = text
-            .bytes()
-            .take_while(|b| b.is_ascii_whitespace())
-            .filter(|&b| b == b'\n')
-            .count();
-        let content_row = range.start_row + leading_newlines;
-        let new_line = prev_row.map_or(true, |prev| content_row > prev);
+        let new_line = prev_row.map_or(true, |prev| range.start_row > prev);
 
         if new_line {
             if prev_row.is_some() {
@@ -99,8 +93,8 @@ pub fn write_outline(
             line_buf.push_str(prefix);
             line_buf.push_str(&source[indent_byte..indent_byte + indent_len]);
             line_buf.push_str(text.trim_start());
-            line_start_num = content_row + 1;
-            line_end_num = content_row + 1;
+            line_start_num = range.start_row + 1;
+            line_end_num = range.start_row + 1;
             line_has_loc = !range.noloc;
         } else {
             if range.start_byte > prev_end_byte {
@@ -114,10 +108,14 @@ pub fn write_outline(
 
         if !range.noloc {
             line_has_loc = true;
+            let node_end_line = range.node.end_position().row + 1;
+            if node_end_line > line_end_num {
+                line_end_num = node_end_line;
+            }
         }
         prev_end_byte = range.end_byte;
         let content_newlines = text.trim().bytes().filter(|&b| b == b'\n').count();
-        let end_row = content_row + content_newlines;
+        let end_row = range.start_row + content_newlines;
         let end_line = end_row + 1;
         if end_line > line_end_num {
             line_end_num = end_line;

@@ -7,10 +7,14 @@
 ; Class
 (class
   (body_statement) @hide) @show
+(class
+  "end" @show)
 
 ; Module
 (module
   (body_statement) @hide) @show
+(module
+  "end" @show)
 
 ; Instance methods
 (body_statement

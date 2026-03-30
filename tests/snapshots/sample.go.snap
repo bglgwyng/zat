@@ -1,11 +1,11 @@
-func Greet(name string) string // L5
-func Add(a, b int) int // L9
-type Config struct { // L13
+func Greet(name string) string // L5-L7
+func Add(a, b int) int // L9-L11
+type Config struct { // L13-L16
 	Name  string
 	Value int
 }
-type Reader interface { // L18
+type Reader interface { // L18-L21
 	Read(p []byte) (n int, err error)
 	Close() error
 }
-func (c *Config) String() string // L23
+func (c *Config) String() string // L23-L25

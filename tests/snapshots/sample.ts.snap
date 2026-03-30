@@ -1,25 +1,25 @@
 import { EventEmitter } from "events"; // L1
-function greet(name: string): string // L3
+function greet(name: string): string // L3-L5
 const MAX_SIZE = 1024; // L7
-const config // L9
-interface Reader { // L14
+const config // L9-L12
+interface Reader { // L14-L17
   read(p: Uint8Array): number // L15
   close(): void // L16
 }
 type Status = "active" | "inactive"; // L19
-type Config = { // L21
+type Config = { // L21-L24
   name: string
   value: number
 }; // L24
-class Service { // L26
+class Service { // L26-L42
   name: string // L27
-  constructor(name: string) // L30
-  start(): void // L35
+  constructor(name: string) // L30-L33
+  start(): void // L35-L37
 }
-enum Color { // L44
+enum Color { // L44-L48
   Red = "red"
   Green = "green"
   Blue = "blue"
 }
-function main() // L50
-function helper() // L54
+function main() // L50-L52
+function helper() // L54-L56

@@ -7,8 +7,8 @@ data Color
   | Blue // L11-L14
 newtype Name = Name String // L16
 type Mapping = Map String String // L18
-class Printable a where // L20
+class Printable a where // L20-L22
   display :: a -> String // L21
   label :: a -> String // L22
-instance Printable Color where // L24
+instance Printable Color where // L24-L28
 infixl 6 `add` // L30

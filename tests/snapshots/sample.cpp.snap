@@ -1,22 +1,22 @@
-#include <string> // L1
-#include <vector> // L2
-namespace app { // L4
-class Service { // L6
+#include <string> // L1-L2
+#include <vector> // L2-L3
+namespace app { // L4-L35
+class Service { // L6-L17
 public:
     Service(const std::string& name); // L8
     std::string getName() const;
 protected:
     void reset();
-struct Config { // L19
+struct Config { // L19-L22
     std::string name;
     int value;
 }
-enum class Color { // L24
+enum class Color { // L24-L28
     Red
     Green
     Blue
 }
-template <typename T> // L30
-T identity(T value) // L31
+template <typename T> // L30-L33
+T identity(T value) // L31-L33
 }
-void greet(const std::string& name) // L37
+void greet(const std::string& name) // L37-L39

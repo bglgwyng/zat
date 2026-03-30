@@ -1,32 +1,32 @@
 using System; // L1
 using System.Collections.Generic; // L2
-namespace Example // L4
+namespace Example // L4-L54
 {
-    class Service // L6
+    class Service // L6-L27
     {
         string Name // L8
         protected int Value // L10
-        Service(string name) // L12
-        string GetName() // L18
+        Service(string name) // L12-L16
+        string GetName() // L18-L21
     }
-    interface IReader // L29
+    interface IReader // L29-L33
     {
         int Read(byte[] buffer); // L31
         void Close(); // L32
     }
-    enum Color // L35
+    enum Color // L35-L40
     {
         Red
         Green
         Blue
     }
-    struct Point // L42
+    struct Point // L42-L46
     {
         int X;
         int Y;
     }
     record Person(string Name, int Age); // L48
-    class Base // L50
+    class Base // L50-L53
     {
         abstract void Run(); // L52
     }

@@ -1,16 +1,16 @@
-#include <stdio.h> // L1
-#include <stdlib.h> // L2
+#include <stdio.h> // L1-L2
+#include <stdlib.h> // L2-L3
 typedef unsigned int uint; // L4
-struct Config { // L6
+struct Config { // L6-L9
     char *name;
     int value;
 }
-enum Color { // L11
+enum Color { // L11-L15
     RED
     GREEN
     BLUE
 }
 struct Node // L17
-void greet(const char *name) // L19
-int add(int a, int b) // L23
+void greet(const char *name) // L19-L21
+int add(int a, int b) // L23-L25
 struct Config // L27

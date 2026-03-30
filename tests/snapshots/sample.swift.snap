@@ -1,24 +1,24 @@
 import Foundation // L1
-class Service { // L3
+class Service { // L3-L19
     var name: String
     private var secret: String // L5
-    init(name: String) // L7
-    func getName() -> String // L12
-    private func internal() // L16
+    init(name: String) // L7-L10
+    func getName() -> String // L12-L14
+    private func internal() // L16-L18
 }
-protocol Reader { // L21
+protocol Reader { // L21-L24
     func read(buffer: Data) -> Int // L22
     func close() // L23
 }
-struct Config { // L26
+struct Config { // L26-L29
     var name: String
     var value: Int
 }
-enum Color { // L31
+enum Color { // L31-L43
     case red
     case green
     case blue
-    func label() -> String // L36
+    func label() -> String // L36-L42
 }
-func greet(name: String) -> String // L45
+func greet(name: String) -> String // L45-L47
 typealias Callback = (String) -> Void // L49

@@ -1,11 +1,11 @@
 import os // L1
 from typing import Optional // L2
-def greet(name: str) -> str: // L4
-def add(a: int, b: int) -> int: // L7
+def greet(name: str) -> str: // L4-L5
+def add(a: int, b: int) -> int: // L7-L8
 MAX_SIZE = 1024 // L10
-class Config: // L12
+class Config: // L12-L24
     default_name = "untitled"
-    def __init__(self, name: str, value: int = 0): // L15
-    def get_name(self) -> str: // L19
-    def create(name: str) -> "Config": // L23
-def decorated(x: int) -> int: // L27
+    def __init__(self, name: str, value: int = 0): // L15-L17
+    def get_name(self) -> str: // L19-L20
+    def create(name: str) -> "Config": // L23-L24
+def decorated(x: int) -> int: // L27-L28
