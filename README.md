@@ -26,6 +26,8 @@ Or run directly:
 nix run github:bglgwyng/zat -- <FILE>
 ```
 
+Also available via [llm-agents.nix](https://github.com/numtide/llm-agents.nix).
+
 ### Cargo
 
 ```shell
