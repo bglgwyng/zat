@@ -35,7 +35,7 @@
           };
           packages.default = pkgs.rustPlatform.buildRustPackage {
             pname = "zat";
-            version = "0.4.0";
+            version = "0.5.3";
             src = ./.;
             cargoLock.lockFile = ./Cargo.lock;
           };
