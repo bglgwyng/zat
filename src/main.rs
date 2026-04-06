@@ -26,7 +26,10 @@ fn view_file(path: &Path) {
             let ranges = outline::extract_outline(&source, &tree, &language, query_src);
             print_outline(&source, &ranges, "");
         }
-        None => eprintln!("zat: {}: unknown file type", path.display()),
+        None => {
+            eprintln!("zat: {}: unknown file type", path.display());
+            std::process::exit(1);
+        }
     }
 }
 
