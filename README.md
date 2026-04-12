@@ -28,6 +28,18 @@ nix run github:bglgwyng/zat -- <FILE>
 
 Also available via [llm-agents.nix](https://github.com/numtide/llm-agents.nix).
 
+### mise
+
+```shell
+mise use -g github:bglgwyng/zat
+```
+
+Or run directly:
+
+```shell
+mise x github:bglgwyng/zat -- zat <FILE>
+```
+
 ### Cargo
 
 ```shell
