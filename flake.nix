@@ -13,6 +13,9 @@
   outputs =
     inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        inputs.flake-parts.flakeModules.easyOverlay
+      ];
       systems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -23,6 +26,7 @@
         {
           pkgs,
           system,
+          config,
           ...
         }:
         {
@@ -45,6 +49,9 @@
                 extensions = [ "rust-src" ];
               })
             ];
+          };
+          overlayAttrs = {
+            zat = config.packages.default;
           };
           formatter = pkgs.nixfmt-rfc-style;
         };
