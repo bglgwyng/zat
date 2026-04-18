@@ -28,6 +28,24 @@ nix run github:bglgwyng/zat -- <FILE>
 
 Also available via [llm-agents.nix](https://github.com/numtide/llm-agents.nix).
 
+#### Home Manager
+
+Add `github:bglgwyng/zat` as a flake input, import `zat.homeManagerModules.default`, and configure:
+
+```nix
+{
+  programs.zat = {
+    enable = true;
+    claude-code.enable = true;
+  };
+}
+```
+
+Options:
+
+- `programs.zat.enable` — installs the `zat` binary
+- `programs.zat.enableClaudeIntegration` — registers a `zat` rule under `programs.claude-code.rules` (requires a `claude-code` Home Manager module that exposes that option)
+
 ### mise
 
 ```shell
