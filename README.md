@@ -44,7 +44,7 @@ Add `github:bglgwyng/zat` as a flake input, import `zat.homeManagerModules.defau
 Options:
 
 - `programs.zat.enable` — installs the `zat` binary
-- `programs.zat.enableClaudeIntegration` — registers a `zat` rule under `programs.claude-code.rules` (requires a `claude-code` Home Manager module that exposes that option)
+- `programs.zat.claude.enable` — registers a `zat` rule under `programs.claude-code.rules` (requires a `claude-code` Home Manager module that exposes that option)
 
 ### mise
 
