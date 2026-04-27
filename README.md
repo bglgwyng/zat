@@ -16,14 +16,16 @@ brew install bglgwyng/tap/zat
 
 ### Nix
 
+[Available in nixpkgs](https://search.nixos.org/packages?show=zat).
+
 ```shell
-nix profile install github:bglgwyng/zat
+nix profile install nixpkgs#zat
 ```
 
 Or run directly:
 
 ```shell
-nix run github:bglgwyng/zat -- <FILE>
+nix run nixpkgs#zat -- <FILE>
 ```
 
 Also available via [llm-agents.nix](https://github.com/numtide/llm-agents.nix).
