@@ -41,7 +41,7 @@
             };
             packages.default = pkgs.rustPlatform.buildRustPackage {
               pname = "zat";
-              version = "0.5.3";
+              version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.version;
               src = ./.;
               cargoLock.lockFile = ./Cargo.lock;
             };
