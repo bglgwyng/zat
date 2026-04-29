@@ -35,7 +35,7 @@ fn view_file(path: &Path) {
 
 fn main() {
     let path_arg = std::env::args().nth(1).unwrap_or_else(|| {
-        eprintln!("Usage: zat <file-or-directory>");
+        eprintln!("Usage: zat <file>");
         std::process::exit(1);
     });
 
