@@ -96,21 +96,22 @@ Only public/exported symbols are shown. Visibility modifiers (`pub`, `export`) a
 
 ## Supported Languages
 
-| Language | Extensions |
-|----------|-----------|
-| JavaScript | `.js`, `.jsx`, `.cjs`, `.mjs` |
-| TypeScript | `.ts`, `.tsx`, `.mts`, `.cts` |
-| Rust | `.rs` |
-| Python | `.py` |
-| Go | `.go` |
-| Java | `.java` |
-| C | `.c`, `.h` |
-| C++ | `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hxx` |
-| C# | `.cs` |
-| Swift | `.swift` |
-| Kotlin | `.kt`, `.kts` |
-| Haskell | `.hs` |
-| Ruby | `.rb` |
+| Language   | Extensions                            |
+|------------|---------------------------------------|
+| C          | `.c`, `.h`                            |
+| C++        | `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hxx` |
+| C#         | `.cs`                                 |
+| Go         | `.go`                                 |
+| Haskell    | `.hs`                                 |
+| Java       | `.java`                               |
+| JavaScript | `.js`, `.jsx`, `.cjs`, `.mjs`         |
+| Kotlin     | `.kt`, `.kts`                         |
+| Markdown   | `.md`, `.markdown`                    |
+| Python     | `.py`                                 |
+| Ruby       | `.rb`                                 |
+| Rust       | `.rs`                                 |
+| Swift      | `.swift`                              |
+| TypeScript | `.ts`, `.tsx`, `.mts`, `.cts`         |
 
 All languages are parsed with [tree-sitter](https://tree-sitter.github.io/).
 
