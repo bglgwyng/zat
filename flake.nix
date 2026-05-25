@@ -47,6 +47,7 @@
             };
             devShells.default = pkgs.mkShell {
               nativeBuildInputs = [
+                # Keep this in sync with rust-toolchain.toml.
                 (pkgs.rust-bin.stable."1.95.0".default.override {
                   extensions = [
                     "clippy"

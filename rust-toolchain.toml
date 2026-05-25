@@ -1,0 +1,8 @@
+# Keep this in sync with falke.nix
+[toolchain]
+channel = "1.95.0"
+components = [
+    "clippy",
+    "rust-src",
+    "rustfmt"
+]
