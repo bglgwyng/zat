@@ -132,3 +132,25 @@ Supported languages: C, C++, C#, Go, Haskell, Java, JavaScript, Kotlin, Markdown
 
 `zat` exits with code 1 for unsupported languages.
 ````
+
+## Development
+
+This project uses a Nix-based development environment.
+
+Enter the development shell:
+
+```bash
+nix develop
+```
+
+Then run the usual checks inside the shell:
+
+```bash
+cargo test
+```
+
+You can also build the package with Nix:
+
+```bash
+nix build
+```
