@@ -146,6 +146,8 @@ nix develop
 Then run the usual checks inside the shell:
 
 ```bash
+cargo fmt
+cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 ```
 

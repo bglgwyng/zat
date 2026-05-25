@@ -22,11 +22,13 @@ The dev shell provides the expected Rust toolchain and development tools.
 
 ```bash
 nix develop                  # Enter the development shell
+cargo fmt                    # Format Rust code
+cargo clippy --all-targets --all-features -- -D warnings # Lint Rust code, failing on warnings
+cargo test                   # Run all snapshot tests
+cargo test test_rust         # Run a single language test
 cargo build                  # Dev build
 cargo build --release        # Release build
 nix build                    # Build via Nix (uses flake.nix + buildRustPackage)
-cargo test                   # Run all snapshot tests
-cargo test test_rust         # Run a single language test
 ```
 
 Run Cargo commands inside `nix develop`.
