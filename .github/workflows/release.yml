@@ -32,6 +32,13 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Cache Rust dependencies and build artifacts
+        uses: Swatinem/rust-cache@v2.9.1
+        with:
+          shared-key: release-${{ runner.os }}-${{ matrix.target }}
+          cache-on-failure: true
+          save-if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
