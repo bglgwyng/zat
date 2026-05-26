@@ -6,7 +6,11 @@ on:
       - "v*"
 
 jobs:
+  validate:
+    uses: ./.github/workflows/checks.yml
+
   build:
+    needs: validate
     strategy:
       matrix:
         include:
