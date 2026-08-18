@@ -98,21 +98,22 @@ Only public/exported symbols are shown. Visibility modifiers (`pub`, `export`) a
 
 ## Supported Languages
 
-| Language | Extensions |
-|----------|-----------|
-| JavaScript | `.js`, `.jsx`, `.cjs`, `.mjs` |
-| TypeScript | `.ts`, `.tsx`, `.mts`, `.cts` |
-| Rust | `.rs` |
-| Python | `.py` |
-| Go | `.go` |
-| Java | `.java` |
-| C | `.c`, `.h` |
-| C++ | `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hxx` |
-| C# | `.cs` |
-| Swift | `.swift` |
-| Kotlin | `.kt`, `.kts` |
-| Haskell | `.hs` |
-| Ruby | `.rb` |
+| Language   | Extensions                            |
+|------------|---------------------------------------|
+| C          | `.c`, `.h`                            |
+| C++        | `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hxx` |
+| C#         | `.cs`                                 |
+| Go         | `.go`                                 |
+| Haskell    | `.hs`                                 |
+| Java       | `.java`                               |
+| JavaScript | `.js`, `.jsx`, `.cjs`, `.mjs`         |
+| Kotlin     | `.kt`, `.kts`                         |
+| Markdown   | `.md`, `.markdown`                    |
+| Python     | `.py`                                 |
+| Ruby       | `.rb`                                 |
+| Rust       | `.rs`                                 |
+| Swift      | `.swift`                              |
+| TypeScript | `.ts`, `.tsx`, `.mts`, `.cts`         |
 
 All languages are parsed with [tree-sitter](https://tree-sitter.github.io/).
 
@@ -133,3 +134,27 @@ Supported languages: C, C++, C#, Go, Haskell, Java, JavaScript, Kotlin, Markdown
 
 `zat` exits with code 1 for unsupported languages.
 ````
+
+## Development
+
+This project uses a Nix-based development environment.
+
+Enter the development shell:
+
+```bash
+nix develop
+```
+
+Then run the usual checks inside the shell:
+
+```bash
+cargo fmt
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test
+```
+
+You can also build the package with Nix:
+
+```bash
+nix build
+```

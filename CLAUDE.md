@@ -6,19 +6,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `zat` is a single Rust binary that shows code outlines (exported symbols with line numbers) for 13 languages. For directories, it finds entry files and shows their outlines alongside a file listing.
 
+## Development Environment
+
+This project uses a Nix-based development environment.
+
+Enter the dev shell before running Rust commands:
+
+```bash
+nix develop
+```
+
+The dev shell provides the expected Rust toolchain and development tools.
+
 ## Build & Test
 
 ```bash
+nix develop                  # Enter the development shell
+cargo fmt                    # Format Rust code
+cargo clippy --all-targets --all-features -- -D warnings # Lint Rust code, failing on warnings
+cargo test                   # Run all snapshot tests
+cargo test test_rust         # Run a single language test
 cargo build                  # Dev build
 cargo build --release        # Release build
 nix build                    # Build via Nix (uses flake.nix + buildRustPackage)
-cargo test                   # Run all snapshot tests
-cargo test test_rust         # Run a single language test
 ```
+
+Run Cargo commands inside `nix develop`.
 
 ## Release
 
 Tag with `v*` triggers `.github/workflows/release.yml` which:
+
 1. Builds on 3 platforms (aarch64-darwin, x86_64-darwin, x86_64-linux) via `cargo build`
 2. Creates a GitHub Release with tarballs
 3. Pushes a Homebrew formula to `bglgwyng/homebrew-tap`

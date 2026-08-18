@@ -26,20 +26,28 @@
         ];
         perSystem =
           {
-            pkgs,
             system,
             config,
             ...
           }:
-          {
-            _module.args.pkgs = import inputs.nixpkgs {
+          let
+            pkgs = import inputs.nixpkgs {
               inherit system;
               overlays = [
                 (import inputs.rust-overlay)
               ];
               config = { };
             };
-            packages.default = pkgs.rustPlatform.buildRustPackage {
+
+            rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+            rustPlatform = pkgs.makeRustPlatform {
+              cargo = rustToolchain;
+              rustc = rustToolchain;
+            };
+          in
+          {
+            _module.args.pkgs = pkgs;
+            packages.default = rustPlatform.buildRustPackage {
               pname = "zat";
               version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.version;
               src = ./.;
@@ -47,9 +55,7 @@
             };
             devShells.default = pkgs.mkShell {
               nativeBuildInputs = [
-                (pkgs.rust-bin.stable."1.95.0".default.override {
-                  extensions = [ "rust-src" ];
-                })
+                rustToolchain
               ];
             };
             overlayAttrs = {

@@ -77,7 +77,7 @@ pub fn write_outline(
             continue;
         }
 
-        let new_line = prev_row.map_or(true, |prev| range.start_row > prev);
+        let new_line = prev_row.is_none_or(|prev| range.start_row > prev);
 
         if new_line {
             if prev_row.is_some() {
@@ -181,7 +181,7 @@ pub fn extract_outline<'a>(
         let mut match_show_if_ref_id: Option<usize> = None;
 
         for cap in m.captures {
-            let capture_name: &str = &query.capture_names()[cap.index as usize];
+            let capture_name: &str = query.capture_names()[cap.index as usize];
             let node = cap.node;
 
             if capture_name == "name" {
