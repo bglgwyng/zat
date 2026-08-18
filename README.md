@@ -39,6 +39,7 @@ Add `github:bglgwyng/zat` as a flake input, import `zat.homeManagerModules.defau
   programs.zat = {
     enable = true;
     claude-code.enable = true;
+    codex.enable = true;
   };
 }
 ```
@@ -46,7 +47,8 @@ Add `github:bglgwyng/zat` as a flake input, import `zat.homeManagerModules.defau
 Options:
 
 - `programs.zat.enable` — installs the `zat` binary
-- `programs.zat.claude.enable` — registers a `zat` rule under `programs.claude-code.rules` (requires a `claude-code` Home Manager module that exposes that option)
+- `programs.zat.claude-code.enable` — registers a `zat` rule under `programs.claude-code.rules` (requires a `claude-code` Home Manager module that exposes that option)
+- `programs.zat.codex.enable` — adds `zat` usage guidance to `programs.codex.context` (requires a Home Manager module that exposes that option)
 
 ### mise
 
