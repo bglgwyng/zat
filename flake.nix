@@ -55,7 +55,7 @@
             overlayAttrs = {
               zat = config.packages.default;
             };
-            formatter = pkgs.nixfmt-rfc-style;
+            formatter = pkgs.nixfmt;
           };
         flake.homeManagerModules.default =
           { pkgs, ... }:
