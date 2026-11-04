@@ -13,7 +13,7 @@
 (newtype) @show
 
 ; type synonym
-(type_synomym) @show
+(type_synonym) @show
 
 ; class declaration (hide method bodies, show header)
 (class
