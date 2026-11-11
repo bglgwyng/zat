@@ -96,6 +96,28 @@ fn extract_outline(source: & str, path: & str) -> OutlineResult // L33-L196
 
 Only public/exported symbols are shown. Visibility modifiers (`pub`, `export`) are stripped for brevity. Struct fields, enum variants, and interface members are included.
 
+### Options
+
+```shell
+zat --help                  # Print usage and supported languages
+zat --version               # Print version and exit
+zat -l <LANG> <FILE>        # Parse FILE as LANG, ignoring the file extension
+```
+
+`-l` / `--lang` accepts a language name or any of its file extensions, so these are all equivalent:
+
+```shell
+zat -l rust src/main.rs
+zat --lang rust src/main.rs
+zat -l rs src/main.rs
+```
+
+Exit codes:
+
+- `0` — success
+- `1` — file or path error (missing file, directory, unknown file type)
+- `2` — usage error (unknown option or unknown language)
+
 ## Supported Languages
 
 | Language | Extensions |
@@ -131,5 +153,5 @@ Prefer `zat` over `cat`/`Read` when you need signatures, not full implementation
 
 Supported languages: C, C++, C#, Go, Haskell, Java, JavaScript, Kotlin, Markdown, Python, Ruby, Rust, Swift, TypeScript/TSX
 
-`zat` exits with code 1 for unsupported languages.
+`zat` exits with code 1 for unsupported or missing files, and code 2 for usage errors (unknown option or language). Use `-l <LANG>` to parse extension-less or unknown files.
 ````
